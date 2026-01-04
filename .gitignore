@@ -1,0 +1,9 @@
+# Save files
+sam_save_*.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Claude config
+.claude/
