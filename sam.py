@@ -404,6 +404,25 @@ class HeroSkills:
         "전위": ["attack", "charge", "defend", "twin_strike", "last_stand", "rest"],
         "서황": ["attack", "charge", "arrow", "drill", "triple_arrow", "fancheng", "rest"],
         "장합": ["attack", "defend", "combo", "drill", "twin_strike", "iron_wall", "qishan", "rest"],
+        "하후연": ["attack", "charge", "arrow", "drill", "triple_arrow", "rest"],  # 기병장
+        "우금": ["attack", "defend", "rally", "drill", "iron_wall", "rest"],  # 방어 전문
+        "악진": ["attack", "charge", "rally", "twin_strike", "rest"],  # 선봉장
+        "이전": ["attack", "combo", "rally", "defend", "duo_rally", "rest"],  # 균형형
+        "조홍": ["attack", "charge", "defend", "twin_strike", "rest"],  # 돌격형
+        "조창": ["attack", "charge", "taunt", "twin_strike", "rest"],  # 맹장형
+        "문빙": ["attack", "defend", "arrow", "rally", "triple_arrow", "rest"],  # 궁병장
+        "등애": ["attack", "confuse", "fire", "combo", "chain_fire", "mass_confuse", "rest"],  # 지략가
+        "종회": ["attack", "confuse", "poison", "fire", "mass_poison", "mass_confuse", "rest"],  # 모사
+        "정욱": ["attack", "confuse", "poison", "heal", "mass_poison", "group_heal", "rest"],  # 책사
+        "순유": ["attack", "confuse", "heal", "inspire", "group_heal", "trio_rally", "rest"],  # 책사
+        "만총": ["attack", "defend", "rally", "drill", "iron_wall", "duo_rally", "rest"],  # 수비장
+        "방덕": ["attack", "charge", "taunt", "twin_strike", "rest"],  # 맹장
+        "조진": ["attack", "charge", "defend", "rally", "twin_strike", "rest"],  # 균형형
+        "채양": ["attack", "charge", "rally", "rest"],  # 일반 무장
+        "이각": ["attack", "charge", "taunt", "rest"],  # 서량 무장
+        "곽사": ["attack", "charge", "arrow", "rest"],  # 서량 무장
+        "화흠": ["attack", "heal", "confuse", "group_heal", "rest"],  # 문관
+        "유엽": ["attack", "confuse", "heal", "inspire", "group_heal", "rest"],  # 문관
         # ===== 오 (사기 스킬 + 다중 타겟) =====
         "주유": ["attack", "fire", "thunder", "confuse", "inspire", "chain_fire", "fire_attack", "genius", "rest"],
         "육손": ["attack", "fire", "confuse", "defend", "drill", "chain_fire", "fire_all", "yiling", "rest"],
@@ -415,6 +434,25 @@ class HeroSkills:
         "황개": ["attack", "fire", "charge", "chain_fire", "fire_all", "fire_ship", "rest"],
         "주태": ["attack", "defend", "charge", "iron_wall", "bodyguard", "rest"],
         "능통": ["attack", "arrow", "combo", "triple_arrow", "revenge_blade", "rest"],
+        "정보": ["attack", "charge", "defend", "rally", "twin_strike", "rest"],  # 노장
+        "한당": ["attack", "charge", "arrow", "twin_strike", "rest"],  # 노장
+        "장흠": ["attack", "arrow", "charge", "triple_arrow", "rest"],  # 궁병장
+        "반장": ["attack", "charge", "taunt", "twin_strike", "rest"],  # 무장
+        "서성": ["attack", "defend", "combo", "rally", "iron_wall", "rest"],  # 방어장
+        "정봉": ["attack", "charge", "arrow", "drill", "triple_arrow", "rest"],  # 맹장
+        "주환": ["attack", "combo", "defend", "rally", "twin_strike", "rest"],  # 균형형
+        "주연": ["attack", "defend", "fire", "rally", "chain_fire", "rest"],  # 방어형
+        "손환": ["attack", "charge", "rally", "defend", "rest"],  # 손씨 일족
+        "장소": ["attack", "confuse", "heal", "inspire", "group_heal", "mass_heal", "rest"],  # 대문관
+        "고옹": ["attack", "heal", "inspire", "rally", "group_heal", "trio_rally", "rest"],  # 문관
+        "육항": ["attack", "fire", "confuse", "defend", "chain_fire", "fire_all", "rest"],  # 육손 아들
+        "손상향": ["attack", "charge", "arrow", "rally", "triple_arrow", "rest"],  # 궁수
+        "제갈근": ["attack", "confuse", "heal", "inspire", "group_heal", "trio_rally", "rest"],  # 문관
+        "손견": ["attack", "charge", "rally", "taunt", "twin_strike", "rest"],  # 호랑이
+        "오경": ["attack", "charge", "defend", "rest"],  # 일반 무장
+        "전종": ["attack", "combo", "rally", "twin_strike", "rest"],  # 일반 무장
+        "동습": ["attack", "defend", "arrow", "triple_arrow", "rest"],  # 일반 무장
+        "하제": ["attack", "charge", "rally", "rest"],  # 일반 무장
         # ===== 재야 장수 =====
         "여포": ["attack", "charge", "combo", "taunt", "twin_strike", "musou", "sky_pierce", "rest"],  # 최강의 무장
         "진궁": ["attack", "confuse", "poison", "fire", "mass_poison", "mass_confuse", "rest"],  # 여포의 책사
@@ -527,63 +565,76 @@ class EventSystem:
         return None
 
     @staticmethod
-    def apply_event(event, faction):
-        """이벤트 효과 적용"""
+    def apply_event(event, target):
+        """이벤트 효과 적용 (target: 성 또는 세력)"""
         effect = event["effect"]
         value = event["value"]
         result = {"applied": True, "detail": ""}
 
         if effect == "food":
-            if isinstance(value, float):
-                change = int(faction["쌀"] * abs(value))
-                if value < 0:
-                    faction["쌀"] = max(0, faction["쌀"] - change)
-                    result["detail"] = f"쌀 -{change}"
-                else:
-                    faction["쌀"] += change
-                    result["detail"] = f"쌀 +{change}"
+            # 성 기반: 군량
+            supply_key = '군량' if '군량' in target else '쌀'
+            if supply_key in target:
+                if isinstance(value, float):
+                    change = int(target[supply_key] * abs(value))
+                    if value < 0:
+                        target[supply_key] = max(0, target[supply_key] - change)
+                        result["detail"] = f"군량 -{change}"
+                    else:
+                        target[supply_key] += change
+                        result["detail"] = f"군량 +{change}"
 
         elif effect == "gold":
-            if isinstance(value, float):
-                change = int(faction["금"] * abs(value))
-                if value < 0:
-                    faction["금"] = max(0, faction["금"] - change)
-                    result["detail"] = f"금 -{change}"
+            # 금은 세력 단위
+            if '금' in target:
+                if isinstance(value, float):
+                    change = int(target["금"] * abs(value))
+                    if value < 0:
+                        target["금"] = max(0, target["금"] - change)
+                        result["detail"] = f"금 -{change}"
+                    else:
+                        target["금"] += change
+                        result["detail"] = f"금 +{change}"
                 else:
-                    faction["금"] += change
-                    result["detail"] = f"금 +{change}"
+                    target["금"] += int(value)
+                    result["detail"] = f"금 +{int(value)}"
             else:
-                faction["금"] += int(value)
-                result["detail"] = f"금 +{int(value)}"
+                result["applied"] = False
+                result["detail"] = "금 변동 없음"
 
         elif effect == "troops":
-            change = int(faction["병력"] * abs(value))
-            if value < 0:
-                faction["병력"] = max(100, faction["병력"] - change)
-                result["detail"] = f"병력 -{change}"
-            else:
-                faction["병력"] += change
-                result["detail"] = f"병력 +{change}"
+            # 성 기반: 병력
+            if '병력' in target:
+                change = int(target["병력"] * abs(value))
+                if value < 0:
+                    target["병력"] = max(100, target["병력"] - change)
+                    result["detail"] = f"병력 -{change}"
+                else:
+                    target["병력"] += change
+                    result["detail"] = f"병력 +{change}"
 
         elif effect == "agri":
-            faction["농업"] = max(10, faction["농업"] + int(value))
-            result["detail"] = f"농업 {int(value):+d}"
+            # 성 기반: 농업
+            if '농업' in target:
+                target["농업"] = max(10, target["농업"] + int(value))
+                result["detail"] = f"농업 {int(value):+d}"
 
         elif effect == "hero_leave":
-            # 충성도 낮은 장수 이탈 → 재야로
-            low_loyalty = [h for h in faction["장수"] if h["충성"] < 50]
-            if low_loyalty and len(faction["장수"]) > 3:
+            # 성 기반: 장수 이탈
+            heroes = target.get("장수", [])
+            low_loyalty = [h for h in heroes if h["충성"] < 50]
+            if low_loyalty and len(heroes) > 1:
                 leaving = random.choice(low_loyalty)
-                faction["장수"].remove(leaving)
-                leaving["충성"] = 50  # 재야 상태로 충성도 리셋
-                result["leaving_hero"] = leaving  # 재야로 보낼 장수
+                target["장수"].remove(leaving)
+                leaving["충성"] = 50
+                result["leaving_hero"] = leaving
                 result["detail"] = f"{leaving['이름']} 이탈! (재야로 이동)"
             else:
                 result["applied"] = False
                 result["detail"] = "충성스러운 장수들이라 이탈자 없음"
 
         elif effect == "hero_join":
-            # 새 장수 합류
+            # 새 장수 합류 - 성에 배치
             new_hero = {
                 "이름": random.choice(["장각", "관평", "주창", "마대", "장포", "왕평", "요화", "마량"]),
                 "무력": random.randint(70, 88),
@@ -596,9 +647,11 @@ class EventSystem:
                 "hp": 0, "max_hp": 0, "mp": 100, "max_mp": 100,
                 "burn": 0, "stun": 0, "buff": 0, "debuff": 0,
                 "부상": 0,
-                "원소속": 0  # 재야 출신
+                "원소속": 0
             }
-            faction["장수"].append(new_hero)
+            if '장수' in target:
+                target["장수"].append(new_hero)
+            result["new_hero"] = new_hero
             result["detail"] = f"{new_hero['이름']} 합류! (무력:{new_hero['무력']} 통솔:{new_hero['통솔']})"
 
         return result
@@ -622,9 +675,9 @@ def create_heroes(faction_idx):
     # (이름, 무력, 지력, 매력, 통솔, is_lord)
     # 군주는 첫번째, 스탯 최강
     base_data = {
-        1: [("조조",88,96,95,98,True), ("하후돈",94,70,80,88,False), ("조인",88,85,82,90,False), ("순욱",30,98,92,75,False), ("곽가",25,99,88,70,False), ("허저",97,20,60,72,False), ("장료",93,82,85,92,False), ("사마의",40,99,90,88,False), ("전위",96,30,65,70,False), ("서황",91,75,72,85,False)],
+        1: [("조조",88,96,95,98,True), ("하후돈",94,70,80,88,False), ("조인",88,85,82,90,False), ("순욱",30,98,92,75,False), ("곽가",25,99,88,70,False), ("허저",97,20,60,72,False), ("장료",93,82,85,92,False), ("사마의",40,99,90,88,False), ("전위",96,30,65,70,False), ("서황",91,75,72,85,False), ("장합",90,78,70,85,False), ("하후연",93,65,72,86,False), ("우금",85,72,68,82,False), ("악진",89,55,65,78,False), ("이전",82,78,75,80,False), ("조홍",84,60,70,75,False), ("조창",95,35,60,72,False), ("문빙",86,70,72,78,False), ("등애",78,92,65,88,False), ("종회",72,95,80,85,False), ("정욱",45,94,68,72,False), ("순유",40,96,82,78,False), ("만총",75,85,78,82,False), ("방덕",94,45,70,76,False), ("조진",82,75,72,80,False), ("채양",80,40,50,65,False), ("이각",82,35,30,60,False), ("곽사",81,38,32,58,False), ("화흠",70,82,85,75,False), ("유엽",35,88,80,70,False)],
         2: [("유비",75,78,100,92,True), ("관우",98,82,95,95,False), ("장비",99,40,70,80,False), ("제갈량",35,100,98,92,False), ("조운",97,88,96,90,False), ("황충",94,65,80,78,False), ("마초",96,50,75,82,False), ("방통",32,98,70,75,False), ("강유",90,92,85,88,False), ("위연",92,60,50,80,False)],
-        3: [("손권",82,88,92,95,True), ("주유",80,97,96,94,False), ("육손",75,96,92,90,False), ("손책",94,78,92,88,False), ("태사자",95,68,80,82,False), ("감녕",96,65,74,78,False), ("여몽",85,92,82,86,False), ("노숙",50,94,90,80,False), ("황개",88,70,82,76,False), ("주태",92,50,75,74,False)],
+        3: [("손권",82,88,92,95,True), ("주유",80,97,96,94,False), ("육손",75,96,92,90,False), ("손책",94,78,92,88,False), ("태사자",95,68,80,82,False), ("감녕",96,65,74,78,False), ("여몽",85,92,82,86,False), ("노숙",50,94,90,80,False), ("황개",88,70,82,76,False), ("주태",92,50,75,74,False), ("능통",90,55,72,76,False), ("정보",86,68,78,82,False), ("한당",85,55,70,75,False), ("장흠",84,50,68,72,False), ("반장",82,45,55,70,False), ("서성",83,72,70,78,False), ("정봉",91,65,68,80,False), ("주환",87,78,72,82,False), ("주연",84,75,70,80,False), ("손환",80,70,75,78,False), ("장소",40,95,92,80,False), ("고옹",35,92,95,78,False), ("육항",78,94,85,88,False), ("손상향",85,65,92,72,False), ("제갈근",45,90,88,75,False), ("손견",94,72,88,90,False), ("오경",70,45,60,65,False), ("전종",78,60,65,70,False), ("동습",76,70,68,72,False), ("하제",72,58,55,68,False)],
         4: [("맹획",92,35,80,75,True), ("축융",88,45,85,72,False), ("올돌골",95,20,60,70,False), ("아회남",78,55,70,68,False), ("동도나",85,40,65,66,False)]
     }
     heroes = []
@@ -665,6 +718,7 @@ class Game:
         self.free_heroes = []  # 재야 장수 목록
         self.prisoners = {}    # 포로 목록 {세력id: [장수들]}
         self.alliances = {}    # 동맹 목록 {세력id: {"대상": 상대세력id, "남은개월": int}}
+        self.castles = {}      # 성 목록 {성이름: {...}}
 
     def setup(self):
         TUI.clear()
@@ -695,10 +749,103 @@ class Game:
 
         self.player_id = get_valid_input("\n  군주를 선택하세요 (1~4): ", 1, 4)
 
-        self.factions[1] = {"이름":"조조", "금":5000, "쌀":8000, "병력":15000, "영토":5, "농업":150, "상업":150, "장수":create_heroes(1)}
-        self.factions[2] = {"이름":"유비", "금":1500, "쌀":3000, "병력":5000,  "영토":2, "농업":80,  "상업":80,  "장수":create_heroes(2)}
-        self.factions[3] = {"이름":"손권", "금":3000, "쌀":5000, "병력":10000, "영토":3, "농업":120, "상업":120, "장수":create_heroes(3)}
-        self.factions[4] = {"이름":"맹획", "금":1000, "쌀":4000, "병력":8000,  "영토":2, "농업":100, "상업":50,  "장수":create_heroes(4)}
+        # 세력 초기화 (금만 세력 단위로 관리)
+        self.factions[1] = {"이름":"조조", "금":5000}
+        self.factions[2] = {"이름":"유비", "금":1500}
+        self.factions[3] = {"이름":"손권", "금":3000}
+        self.factions[4] = {"이름":"맹획", "금":1000}
+
+        # 장수 생성
+        wei_heroes = create_heroes(1)   # 조조군 10명
+        shu_heroes = create_heroes(2)   # 유비군 10명
+        wu_heroes = create_heroes(3)    # 손권군 10명
+        nanman_heroes = create_heroes(4) # 맹획군 5명
+
+        # 성 초기화 (13성)
+        self.castles = {
+            # === 조조(위) 6성 ===
+            "허창": {
+                "소속": 1, "수도": True,
+                "장수": [wei_heroes[0], wei_heroes[3], wei_heroes[4], wei_heroes[7], wei_heroes[18], wei_heroes[19], wei_heroes[20], wei_heroes[21], wei_heroes[28], wei_heroes[29]],  # 조조, 순욱, 곽가, 사마의, 등애, 종회, 정욱, 순유, 화흠, 유엽
+                "병력": 5000, "군량": 3000, "농업": 150, "상업": 150,
+                "인접": ["낙양", "업", "진류"]
+            },
+            "낙양": {
+                "소속": 1, "수도": False,
+                "장수": [wei_heroes[1], wei_heroes[5], wei_heroes[10], wei_heroes[11], wei_heroes[16], wei_heroes[23]],  # 하후돈, 허저, 장합, 하후연, 조창, 방덕
+                "병력": 3000, "군량": 2000, "농업": 120, "상업": 120,
+                "인접": ["허창", "완성"]
+            },
+            "업": {
+                "소속": 1, "수도": False,
+                "장수": [wei_heroes[2], wei_heroes[12], wei_heroes[13], wei_heroes[24]],  # 조인, 우금, 악진, 조진
+                "병력": 2500, "군량": 1500, "농업": 100, "상업": 100,
+                "인접": ["허창", "서주"]
+            },
+            "서주": {
+                "소속": 1, "수도": False,
+                "장수": [wei_heroes[6], wei_heroes[14], wei_heroes[22]],  # 장료, 이전, 만총
+                "병력": 2500, "군량": 1000, "농업": 80, "상업": 100,
+                "인접": ["업", "건업"]
+            },
+            "완성": {
+                "소속": 1, "수도": False,
+                "장수": [wei_heroes[9], wei_heroes[15], wei_heroes[17]],  # 서황, 조홍, 문빙
+                "병력": 2000, "군량": 1000, "농업": 80, "상업": 80,
+                "인접": ["낙양", "한중"]
+            },
+            "진류": {
+                "소속": 1, "수도": False,
+                "장수": [wei_heroes[8], wei_heroes[25], wei_heroes[26], wei_heroes[27]],  # 전위, 채양, 이각, 곽사
+                "병력": 1500, "군량": 500, "농업": 60, "상업": 60,
+                "인접": ["허창"]
+            },
+            # === 유비(촉) 2성 ===
+            "성도": {
+                "소속": 2, "수도": True,
+                "장수": [shu_heroes[0], shu_heroes[3], shu_heroes[4], shu_heroes[5], shu_heroes[7], shu_heroes[8]],  # 유비, 제갈량, 조운, 황충, 방통, 강유
+                "병력": 3000, "군량": 2000, "농업": 100, "상업": 100,
+                "인접": ["한중", "남중"]
+            },
+            "한중": {
+                "소속": 2, "수도": False,
+                "장수": [shu_heroes[1], shu_heroes[2], shu_heroes[6], shu_heroes[9]],  # 관우, 장비, 마초, 위연
+                "병력": 2500, "군량": 1500, "농업": 80, "상업": 60,
+                "인접": ["성도", "완성", "장사"]
+            },
+            # === 손권(오) 4성 ===
+            "건업": {
+                "소속": 3, "수도": True,
+                "장수": [wu_heroes[0], wu_heroes[1], wu_heroes[7], wu_heroes[20], wu_heroes[21], wu_heroes[23], wu_heroes[24]],  # 손권, 주유, 노숙, 장소, 고옹, 손상향, 제갈근
+                "병력": 4000, "군량": 2500, "농업": 120, "상업": 140,
+                "인접": ["시상", "서주"]
+            },
+            "시상": {
+                "소속": 3, "수도": False,
+                "장수": [wu_heroes[3], wu_heroes[4], wu_heroes[11], wu_heroes[12], wu_heroes[25]],  # 손책, 태사자, 정보, 한당, 손견
+                "병력": 2500, "군량": 1500, "농업": 100, "상업": 100,
+                "인접": ["건업", "장사"]
+            },
+            "장사": {
+                "소속": 3, "수도": False,
+                "장수": [wu_heroes[2], wu_heroes[6], wu_heroes[10], wu_heroes[17], wu_heroes[18], wu_heroes[22]],  # 육손, 여몽, 능통, 주환, 주연, 육항
+                "병력": 2000, "군량": 1000, "농업": 80, "상업": 80,
+                "인접": ["시상", "여릉", "한중", "남중"]
+            },
+            "여릉": {
+                "소속": 3, "수도": False,
+                "장수": [wu_heroes[5], wu_heroes[8], wu_heroes[9], wu_heroes[13], wu_heroes[14], wu_heroes[15], wu_heroes[16], wu_heroes[19], wu_heroes[26], wu_heroes[27], wu_heroes[28], wu_heroes[29]],  # 감녕, 황개, 주태, 장흠, 반장, 서성, 정봉, 손환, 오경, 전종, 동습, 하제
+                "병력": 1500, "군량": 800, "농업": 60, "상업": 60,
+                "인접": ["장사"]
+            },
+            # === 맹획(남만) 1성 ===
+            "남중": {
+                "소속": 4, "수도": True,
+                "장수": nanman_heroes,  # 전원 (맹획, 축융, 올돌골, 아회남, 동도나)
+                "병력": 8000, "군량": 4000, "농업": 100, "상업": 50,
+                "인접": ["성도", "장사"]
+            }
+        }
 
         # 포로 목록 초기화
         for fid in self.factions:
@@ -706,18 +853,71 @@ class Game:
 
         # 재야 장수 초기화 (어느 세력에도 속하지 않은 인재들)
         self.free_heroes = [
-            {"이름":"여포","무력":100,"지력":25,"통솔":70,"민첩":95,"운":40,"매력":45,"충성":50,"원소속":0,"is_lord":False},
-            {"이름":"진궁","무력":45,"지력":96,"통솔":80,"민첩":65,"운":55,"매력":78,"충성":50,"원소속":0,"is_lord":False},
-            {"이름":"장수","무력":90,"지력":55,"통솔":75,"민첩":80,"운":60,"매력":62,"충성":50,"원소속":0,"is_lord":False},
-            {"이름":"장임","무력":88,"지력":60,"통솔":78,"민첩":72,"운":65,"매력":70,"충성":50,"원소속":0,"is_lord":False},
-            {"이름":"엄안","무력":85,"지력":68,"통솔":82,"민첩":55,"운":70,"매력":80,"충성":50,"원소속":0,"is_lord":False},
-            {"이름":"서서","무력":45,"지력":92,"통솔":72,"민첩":68,"운":80,"매력":82,"충성":50,"원소속":0,"is_lord":False},
-            {"이름":"화타","무력":20,"지력":90,"통솔":50,"민첩":60,"운":85,"매력":95,"충성":50,"원소속":0,"is_lord":False},
+            {"이름":"여포","무력":100,"지력":25,"통솔":70,"민첩":95,"운":40,"매력":45,"충성":50,"원소속":0,"is_lord":False,"부상":0},
+            {"이름":"진궁","무력":45,"지력":96,"통솔":80,"민첩":65,"운":55,"매력":78,"충성":50,"원소속":0,"is_lord":False,"부상":0},
+            {"이름":"장수","무력":90,"지력":55,"통솔":75,"민첩":80,"운":60,"매력":62,"충성":50,"원소속":0,"is_lord":False,"부상":0},
+            {"이름":"장임","무력":88,"지력":60,"통솔":78,"민첩":72,"운":65,"매력":70,"충성":50,"원소속":0,"is_lord":False,"부상":0},
+            {"이름":"엄안","무력":85,"지력":68,"통솔":82,"민첩":55,"운":70,"매력":80,"충성":50,"원소속":0,"is_lord":False,"부상":0},
+            {"이름":"서서","무력":45,"지력":92,"통솔":72,"민첩":68,"운":80,"매력":82,"충성":50,"원소속":0,"is_lord":False,"부상":0},
+            {"이름":"화타","무력":20,"지력":90,"통솔":50,"민첩":60,"운":85,"매력":95,"충성":50,"원소속":0,"is_lord":False,"부상":0},
         ]
 
         TUI.clear()
 
     def get_player(self): return self.factions[self.player_id]
+
+    # === 성 시스템 헬퍼 함수 ===
+    def get_faction_castles(self, faction_id):
+        """세력이 보유한 성 목록 반환"""
+        return {name: data for name, data in self.castles.items() if data['소속'] == faction_id}
+
+    def get_faction_castle_count(self, faction_id):
+        """세력의 성 개수 (영토) 반환"""
+        return len(self.get_faction_castles(faction_id))
+
+    def get_faction_total_troops(self, faction_id):
+        """세력의 총 병력 반환"""
+        return sum(c['병력'] for c in self.castles.values() if c['소속'] == faction_id)
+
+    def get_faction_total_supply(self, faction_id):
+        """세력의 총 군량 반환"""
+        return sum(c['군량'] for c in self.castles.values() if c['소속'] == faction_id)
+
+    def get_faction_heroes(self, faction_id):
+        """세력의 모든 장수 반환"""
+        heroes = []
+        for castle in self.castles.values():
+            if castle['소속'] == faction_id:
+                heroes.extend(castle['장수'])
+        return heroes
+
+    def get_castle_by_hero(self, hero_name):
+        """장수가 있는 성 이름 반환"""
+        for castle_name, castle in self.castles.items():
+            for h in castle['장수']:
+                if h['이름'] == hero_name:
+                    return castle_name
+        return None
+
+    def get_adjacent_enemy_castles(self, castle_name):
+        """인접한 적 성 목록 반환"""
+        castle = self.castles[castle_name]
+        my_faction = castle['소속']
+        enemy_castles = []
+        for adj_name in castle['인접']:
+            if self.castles[adj_name]['소속'] != my_faction:
+                enemy_castles.append(adj_name)
+        return enemy_castles
+
+    def get_adjacent_friendly_castles(self, castle_name):
+        """인접한 아군 성 목록 반환"""
+        castle = self.castles[castle_name]
+        my_faction = castle['소속']
+        friendly_castles = []
+        for adj_name in castle['인접']:
+            if self.castles[adj_name]['소속'] == my_faction:
+                friendly_castles.append(adj_name)
+        return friendly_castles
 
     def save_game(self, slot=1, silent=False):
         """게임 저장"""
@@ -731,7 +931,8 @@ class Game:
             "player_id": self.player_id,
             "free_heroes": self.free_heroes,
             "prisoners": self.prisoners,
-            "alliances": self.alliances
+            "alliances": self.alliances,
+            "castles": self.castles
         }
         filename = f"sam_save_{slot}.json"
         try:
@@ -769,6 +970,8 @@ class Game:
             # prisoners의 키를 정수로 변환
             self.prisoners = {int(k): v for k, v in save_data["prisoners"].items()}
             self.alliances = {int(k): v for k, v in save_data["alliances"].items()} if save_data["alliances"] else {}
+            # castles 로드
+            self.castles = save_data.get("castles", {})
             print(f"\n  📂 슬롯 {slot} 로드 완료!")
             print(f"     {self.get_date_string()} - {self.factions[self.player_id]['이름']}군")
             time.sleep(1)
@@ -819,27 +1022,38 @@ class Game:
     def show_status(self):
         """현재 상태 표시"""
         pl = self.get_player()
+        my_castles = self.get_faction_castles(self.player_id)
+        total_troops = self.get_faction_total_troops(self.player_id)
+        total_supply = self.get_faction_total_supply(self.player_id)
+        total_heroes = len(self.get_faction_heroes(self.player_id))
 
-        print(f"\n{'═' * 62}")
+        print(f"\n{'═' * 70}")
         print(f"  📜 {pl['이름']}의 천하통일기 - {self.get_date_string()}")
         print(f"  📅 이번 달 남은 행동: {self.actions_left}회")
-        print(f"{'═' * 62}")
+        print(f"{'═' * 70}")
 
-        # 자원 현황
+        # 세력 총괄 현황
         resources = [
             f"💰 금: {pl['금']:,}",
-            f"🌾 쌀: {pl['쌀']:,}",
-            f"⚔️ 병력: {pl['병력']:,}",
-            f"🏰 영토: {pl['영토']}"
+            f"🌾 총 군량: {total_supply:,}",
+            f"⚔️ 총 병력: {total_troops:,}",
+            f"🏰 보유 성: {len(my_castles)}개",
+            f"👥 총 장수: {total_heroes}명"
         ]
-        print(TUI.box("국력 현황", resources, 60))
+        print(TUI.box("세력 총괄", resources, 68))
 
-        # 인프라
-        infra = [
-            f"🌱 농업: {pl['농업']} (쌀 생산력)",
-            f"💹 상업: {pl['상업']} (금 생산력)"
-        ]
-        print(TUI.box("인프라", infra, 60))
+        # 보유 성 목록
+        print(f"\n  🏯 보유 성 목록:")
+        print(f"  {'─' * 66}")
+        print(f"  {'성명':<8} {'병력':>8} {'군량':>8} {'농업':>6} {'상업':>6} {'장수':>6}  인접 적성")
+        print(f"  {'─' * 66}")
+        for castle_name, castle in my_castles.items():
+            mark = "★" if castle['수도'] else " "
+            hero_count = len(castle['장수'])
+            enemy_adj = self.get_adjacent_enemy_castles(castle_name)
+            enemy_str = ", ".join(enemy_adj) if enemy_adj else "-"
+            print(f"  {mark}{castle_name:<7} {castle['병력']:>8,} {castle['군량']:>8,} {castle['농업']:>6} {castle['상업']:>6} {hero_count:>6}명  {enemy_str}")
+        print(f"  {'─' * 66}")
 
         # 동맹 정보
         my_alliance = self.alliances.get(self.player_id)
@@ -849,19 +1063,19 @@ class Game:
 
     def show_commands(self):
         """명령어 메뉴"""
-        print("\n┌─────────────────── 명 령 ───────────────────┐")
-        print("│  1.농업   2.상업   3.포상   4.징병          │")
-        print("│  5.전쟁   6.계략   7.정보   8.등용   9.외교 │")
-        print("│  10.저장  11.로드  0.종료                   │")
-        print("└─────────────────────────────────────────────┘")
+        print("\n┌──────────────────── 명 령 ────────────────────┐")
+        print("│  1.농업   2.상업   3.포상   4.징병   5.전쟁  │")
+        print("│  6.계략   7.정보   8.등용   9.외교   10.이동 │")
+        print("│  11.저장  12.로드  0.종료                    │")
+        print("└──────────────────────────────────────────────┘")
 
     def select_hero(self, msg, allow_injured=True, check_acted=True, mark_acted=True):
-        """장수 선택
+        """장수 선택 (전체 세력 장수 중 선택)
         allow_injured=False: 부상 장수 선택 불가
         check_acted=True: 이번 달 행동한 장수 선택 불가
         mark_acted=True: 선택 후 행동한 것으로 표시
         """
-        pl = self.get_player()
+        my_heroes = self.get_faction_heroes(self.player_id)
         print(f"\n{'─' * 70}")
         print(f"  📋 장수 선택 - {msg}")
         print(f"{'─' * 70}")
@@ -869,7 +1083,7 @@ class Game:
         headers = ["#", "이름", "무력", "지력", "통솔", "민첩", "운", "충성", "상태"]
         rows = []
         available = []
-        for i, h in enumerate(pl['장수']):
+        for i, h in enumerate(my_heroes):
             status = "정상"
             can_select = True
 
@@ -899,14 +1113,14 @@ class Game:
             return None
 
         while True:
-            idx = get_valid_input("  번호 선택: ", 1, len(pl['장수']))
+            idx = get_valid_input("  번호 선택: ", 1, len(my_heroes))
             if idx in available:
-                hero = pl['장수'][idx-1]
+                hero = my_heroes[idx-1]
                 if mark_acted:
                     self.acted_heroes.append(hero['이름'])
                 return hero
             else:
-                h = pl['장수'][idx-1]
+                h = my_heroes[idx-1]
                 if h.get('부상', 0) > 0:
                     print(f"  ⚠ {h['이름']}은(는) 부상 중입니다.")
                 elif h['이름'] in self.acted_heroes:
@@ -1183,9 +1397,11 @@ class Game:
             msg += f" {C.YELLOW}[도원결의!]{C.RESET}"
         return damage, is_crit, msg, defense_rate
 
-    def execute_battle(self, my_party, enemy_party, is_defense=False, my_faction=None, enemy_faction=None):
+    def execute_battle(self, my_party, enemy_party, is_defense=False, my_faction=None, enemy_faction=None, from_castle=None, target_castle=None):
         """3vs3 전투 실행 - 민첩 기반 행동 순서
         Returns: (승리여부, 아군부상자, 적군부상자, 아군포로, 적군포로)
+        from_castle: 아군 출발 성 (공격시) 또는 방어 성 (방어시)
+        target_castle: 적군 성
         """
         TUI.clear()  # 전투 화면 시작
         sound_mgr.play("bgm_battle.mp3")
@@ -1203,21 +1419,21 @@ class Game:
             # 화면 클리어 먼저
             TUI.clear()
 
-            # ===== 군량 소모 시스템 =====
+            # ===== 군량 소모 시스템 (성 기반) =====
             rice_per_turn = len(alive_my()) * 50  # 장수당 50 군량
             enemy_rice_per_turn = len(alive_enemy()) * 50
             rice_msg = []  # 군량 관련 메시지 수집
 
-            # 아군 군량 소모
-            if my_faction:
-                my_faction['쌀'] -= rice_per_turn
-                if my_faction['쌀'] <= 0:
-                    my_faction['쌀'] = 0
+            # 아군 군량 소모 (성 기반)
+            if from_castle:
+                from_castle['군량'] -= rice_per_turn
+                if from_castle['군량'] <= 0:
+                    from_castle['군량'] = 0
                     rice_msg.append(f"  {C.RED}⚠️ 군량 고갈! 아군 사기 저하!{C.RESET}")
                     for ally in alive_my():
                         ally['hp'] = int(ally['hp'] * 0.9)
                         ally['debuff'] = max(ally.get('debuff', 0), 2)
-                    if turn > 5 and my_faction['쌀'] <= 0:
+                    if turn > 5 and from_castle['군량'] <= 0:
                         rice_msg.append(f"  {C.RED}💀 굶주림으로 전투 지속 불가! 퇴각!{C.RESET}")
                         TUI.clear()
                         for msg in rice_msg:
@@ -1225,16 +1441,16 @@ class Game:
                         time.sleep(1.5)
                         return False, my_injured, enemy_injured, my_captured + alive_my(), enemy_captured
 
-            # 적군 군량 소모
-            if enemy_faction:
-                enemy_faction['쌀'] -= enemy_rice_per_turn
-                if enemy_faction['쌀'] <= 0:
-                    enemy_faction['쌀'] = 0
+            # 적군 군량 소모 (성 기반)
+            if target_castle:
+                target_castle['군량'] -= enemy_rice_per_turn
+                if target_castle['군량'] <= 0:
+                    target_castle['군량'] = 0
                     rice_msg.append(f"  {C.GREEN}⚠️ 적군 군량 고갈! 적 사기 저하!{C.RESET}")
                     for enemy in alive_enemy():
                         enemy['hp'] = int(enemy['hp'] * 0.9)
                         enemy['debuff'] = max(enemy.get('debuff', 0), 2)
-                    if turn > 5 and enemy_faction['쌀'] <= 0:
+                    if turn > 5 and target_castle['군량'] <= 0:
                         rice_msg.append(f"  {C.GREEN}🎉 적군 굶주림! 승리!{C.RESET}")
                         TUI.clear()
                         for msg in rice_msg:
@@ -1263,10 +1479,10 @@ class Game:
             for msg in defense_bonus_msg:
                 print(msg)
 
-            # 군량 상태 표시
-            if my_faction and enemy_faction:
-                my_rice = my_faction['쌀']
-                e_rice = enemy_faction['쌀']
+            # 군량 상태 표시 (성 기반)
+            if from_castle and target_castle:
+                my_rice = from_castle['군량']
+                e_rice = target_castle['군량']
                 my_col = C.GREEN if my_rice > 500 else (C.YELLOW if my_rice > 0 else C.RED)
                 e_col = C.GREEN if e_rice > 500 else (C.YELLOW if e_rice > 0 else C.RED)
                 print(f"  {C.BLUE}아군 군량:{my_col}{my_rice:,}{C.RESET} | {C.RED}적군 군량:{e_col}{e_rice:,}{C.RESET}")
@@ -1488,17 +1704,17 @@ class Game:
                         print(f"  💤 {actor['이름']} 휴식 (MP +30)")
 
                     elif skill_id == "support":
-                        if my_faction is None:
-                            print("  ❌ 지원 불가 (세력 정보 없음)")
+                        if from_castle is None:
+                            print("  ❌ 지원 불가 (성 정보 없음)")
                             actor['mp'] += skill_info['mp']
-                        elif my_faction['병력'] < 500:
+                        elif from_castle['병력'] < 500:
                             print("  ❌ 지원 병력 부족!")
                             actor['mp'] += skill_info['mp']
                         else:
                             support_troops = int(actor['통솔'] * 30)
-                            support_troops = min(support_troops, my_faction['병력'] - 100)
+                            support_troops = min(support_troops, from_castle['병력'] - 100)
                             heal_amount = support_troops
-                            my_faction['병력'] -= support_troops
+                            from_castle['병력'] -= support_troops
                             actor['hp'] = min(actor['max_hp'], actor['hp'] + heal_amount)
                             sound_mgr.play("sfx_heal.wav")
                             print(f"  🚩 {actor['이름']} 지원군! 병력 -{support_troops} → HP +{heal_amount}")
@@ -2339,19 +2555,21 @@ class Game:
 
                     # 태사자 - 일기토
                     elif skill_id == "duel_master":
-                        sound_mgr.play("sfx_crit.wav")
-                        print(f"\n  {C.YELLOW}🤺 ═══ 일 기 토 ═══ 🤺{C.RESET}")
-                        print(f"  {C.CYAN}\"나와 일대일로 승부하라!\"{C.RESET}")
-                        time.sleep(0.8)
-                        hits = 5
-                        total_dmg = 0
-                        for i in range(hits):
-                            if target['hp'] <= 0: break
-                            dmg = int(war * 7)
-                            target['hp'] -= dmg
-                            total_dmg += dmg
-                        print(f"  {C.RED}⚔️ {target['이름']}에게 5연속! 총 {total_dmg} 피해!{C.RESET}")
-                        acted = True
+                        target = self.select_target(enemy_party, "single")
+                        if target:
+                            sound_mgr.play("sfx_crit.wav")
+                            print(f"\n  {C.YELLOW}🤺 ═══ 일 기 토 ═══ 🤺{C.RESET}")
+                            print(f"  {C.CYAN}\"나와 일대일로 승부하라!\"{C.RESET}")
+                            time.sleep(0.8)
+                            hits = 5
+                            total_dmg = 0
+                            for i in range(hits):
+                                if target['hp'] <= 0: break
+                                dmg = int(war * 7)
+                                target['hp'] -= dmg
+                                total_dmg += dmg
+                            print(f"  {C.RED}⚔️ {target['이름']}에게 5연속! 총 {total_dmg} 피해!{C.RESET}")
+                            acted = True
 
                     # 여몽 - 백의도강
                     elif skill_id == "white_robe":
@@ -2471,16 +2689,18 @@ class Game:
 
                     # 축융 - 비도술 (MP50): 비도 연발
                     elif skill_id == "flying_blade":
-                        sound_mgr.play("sfx_attack.wav")
-                        print(f"  {C.MAGENTA}🗡️ 축융 비도술!{C.RESET}")
-                        hits = random.randint(3, 5)
-                        total_dmg = 0
-                        for i in range(hits):
-                            dmg = int(war * 4 + intel * 2)
-                            target['hp'] -= dmg
-                            total_dmg += dmg
-                        print(f"  {C.RED}🗡️ {target['이름']}에게 {hits}연속 총 {total_dmg} 피해!{C.RESET}")
-                        acted = True
+                        target = self.select_target(enemy_party, "single")
+                        if target:
+                            sound_mgr.play("sfx_attack.wav")
+                            print(f"  {C.MAGENTA}🗡️ 축융 비도술!{C.RESET}")
+                            hits = random.randint(3, 5)
+                            total_dmg = 0
+                            for i in range(hits):
+                                dmg = int(war * 4 + intel * 2)
+                                target['hp'] -= dmg
+                                total_dmg += dmg
+                            print(f"  {C.RED}🗡️ {target['이름']}에게 {hits}연속 총 {total_dmg} 피해!{C.RESET}")
+                            acted = True
 
                     # 축융 - 맹수여왕 (MP80): 맹수+화공
                     elif skill_id == "beast_queen":
@@ -3520,17 +3740,20 @@ class Game:
 
                     elif chosen_skill == "duel_master":
                         actor['mp'] -= 80
-                        sound_mgr.play("sfx_crit.wav")
-                        print(f"\n  {C.YELLOW}🤺 ═══ 적 태사자 일 기 토 ═══ 🤺{C.RESET}")
-                        time.sleep(0.8)
-                        total_dmg = 0
-                        for i in range(5):
-                            if target['hp'] <= 0: break
-                            dmg = int(war * 7)
-                            target['hp'] -= dmg
-                            total_dmg += dmg
-                        print(f"  {C.RED}⚔️ {target['이름']}에게 5연속! 총 {total_dmg} 피해!{C.RESET}")
-                        ai_acted = True
+                        alive_targets = [a for a in my_party if a['hp'] > 0]
+                        if alive_targets:
+                            target = random.choice(alive_targets)
+                            sound_mgr.play("sfx_crit.wav")
+                            print(f"\n  {C.YELLOW}🤺 ═══ 적 태사자 일 기 토 ═══ 🤺{C.RESET}")
+                            time.sleep(0.8)
+                            total_dmg = 0
+                            for i in range(5):
+                                if target['hp'] <= 0: break
+                                dmg = int(war * 7)
+                                target['hp'] -= dmg
+                                total_dmg += dmg
+                            print(f"  {C.RED}⚔️ {target['이름']}에게 5연속! 총 {total_dmg} 피해!{C.RESET}")
+                            ai_acted = True
 
                     elif chosen_skill == "white_robe":
                         actor['mp'] -= 80
@@ -3717,16 +3940,19 @@ class Game:
 
                     elif chosen_skill == "flying_blade":
                         actor['mp'] -= 50
-                        sound_mgr.play("sfx_attack.wav")
-                        print(f"  {C.MAGENTA}🗡️ 적 축융 비도술!{C.RESET}")
-                        hits = random.randint(3, 5)
-                        total_dmg = 0
-                        for i in range(hits):
-                            dmg = int(war * 4 + e_int * 2)
-                            target['hp'] -= dmg
-                            total_dmg += dmg
-                        print(f"  {C.RED}🗡️ {target['이름']}에게 {hits}연속 총 {total_dmg} 피해!{C.RESET}")
-                        ai_acted = True
+                        alive_targets = [a for a in my_party if a['hp'] > 0]
+                        if alive_targets:
+                            target = random.choice(alive_targets)
+                            sound_mgr.play("sfx_attack.wav")
+                            print(f"  {C.MAGENTA}🗡️ 적 축융 비도술!{C.RESET}")
+                            hits = random.randint(3, 5)
+                            total_dmg = 0
+                            for i in range(hits):
+                                dmg = int(war * 4 + e_int * 2)
+                                target['hp'] -= dmg
+                                total_dmg += dmg
+                            print(f"  {C.RED}🗡️ {target['이름']}에게 {hits}연속 총 {total_dmg} 피해!{C.RESET}")
+                            ai_acted = True
 
                     elif chosen_skill == "beast_queen":
                         actor['mp'] -= 80
@@ -3831,216 +4057,262 @@ class Game:
 
         return won, my_injured, enemy_injured, my_captured, enemy_captured
 
-    def defensive_battle(self, attacker_id):
+    def defensive_battle(self, attacker_id, attacker_castle_name, target_castle_name):
+        """방어전 - 성 기반"""
         enemy = self.factions[attacker_id]
-        if not enemy['장수']: return
+        attacker_castle = self.castles[attacker_castle_name]
+        target_castle = self.castles[target_castle_name]
         pl = self.get_player()
 
+        if not attacker_castle['장수']:
+            return
+
         print(f"\n{'!' * 60}")
-        print(f"  🚨 [긴급] {enemy['이름']}군 침공! 방어전 개시!")
+        print(f"  🚨 [긴급] {enemy['이름']}군이 {target_castle_name}을(를) 침공!")
         print(f"{'!' * 60}")
 
-        my_party = []
-        # 부상 안 당한 장수 중 최대 5명
-        available_heroes = [h for h in pl['장수'] if h.get('부상', 0) == 0]
+        # 방어 성의 장수로 방어
+        available_heroes = [h for h in target_castle['장수'] if h.get('부상', 0) == 0]
         max_d = min(5, len(available_heroes))
 
         if max_d == 0:
-            print("  ❌ 수비 가능한 장수가 없습니다!")
-            pl['영토'] -= 1
-            enemy['영토'] += 1
+            print(f"  ❌ {target_castle_name}에 수비 가능한 장수가 없습니다!")
+            target_castle['소속'] = attacker_id
+            print(f"  🔥 {target_castle_name} 함락!")
             return
 
-        print(f"\n  📊 방어 가능 병력: {pl['병력']:,}")
+        print(f"\n  📊 {target_castle_name} 병력: {target_castle['병력']:,}")
         print(f"  👥 수비 가능 장수: {max_d}명")
         num_defenders = get_valid_input(f"  몇 명 수비? (1~{max_d}): ", 1, max_d)
 
         # 병력 분배
-        troops_per_hero = pl['병력'] // num_defenders
-        # AI는 최대 5명까지 자유롭게 출전 (플레이어 수에 맞추지 않음)
-        enemy_count = min(5, len(enemy['장수']))
-        enemy_troops_per_hero = enemy['병력'] // enemy_count
+        troops_per_hero = target_castle['병력'] // num_defenders if target_castle['병력'] > 0 else 0
+        enemy_count = min(5, len(attacker_castle['장수']))
+        enemy_troops_per_hero = attacker_castle['병력'] // enemy_count if enemy_count > 0 else 0
 
         print(f"\n  📊 장수당 병력: {troops_per_hero:,}")
-        print("  👇 수비할 장수를 선택하세요 (부상 장수 제외)")
+        print("  👇 수비할 장수를 선택하세요:")
 
+        my_party = []
+        selected = []
         for i in range(num_defenders):
-            h = self.select_hero(f"수비장수 [{i+1}/{num_defenders}]", allow_injured=False, check_acted=False, mark_acted=False)
-            if h is None:
-                print("  ❌ 수비 가능한 장수가 없습니다!")
-                # 방어 실패 처리
-                pl['영토'] -= 1
-                enemy['영토'] += 1
-                return
-            f=h.copy()
-            # HP = min(할당 병력, 통솔 × 100)
-            max_lead_hp = h['통솔'] * 100
+            print(f"\n  수비장수 [{i+1}/{num_defenders}] 선택:")
+            for j, h in enumerate(available_heroes, 1):
+                if h not in selected:
+                    print(f"  {j}. {h['이름']} (무력:{h['무력']} 지력:{h['지력']})")
+            choice = get_valid_input("  선택: ", 1, len(available_heroes))
+            hero = available_heroes[choice - 1]
+            if hero in selected:
+                continue
+            selected.append(hero)
+
+            f = hero.copy()
+            max_lead_hp = hero['통솔'] * 100
             f['max_hp'] = min(troops_per_hero, max_lead_hp)
             f['hp'] = f['max_hp']
-            if troops_per_hero > max_lead_hp:
-                print(f"     ⚠ {h['이름']}의 통솔력 한계로 {max_lead_hp}명만 지휘 가능")
-            f['mp']=100
-            f['max_mp']=100
-            f['burn']=0
-            f['stun']=0
-            f['buff']=0
-            f['debuff']=0
+            f['mp'] = 100
+            f['max_mp'] = 100
+            f['burn'] = 0
+            f['stun'] = 0
+            f['buff'] = 0
+            f['debuff'] = 0
             my_party.append(f)
 
+        # 적군 파티 구성
         enemy_party = []
-        attacker_heroes = sorted(enemy['장수'], key=lambda x: x['무력'], reverse=True)[:5]
+        attacker_heroes = sorted(attacker_castle['장수'], key=lambda x: x['무력'], reverse=True)[:5]
         for h in random.sample(attacker_heroes, enemy_count):
-            ef=h.copy()
-            # HP = min(할당 병력, 통솔 × 100)
+            ef = h.copy()
             max_lead_hp = h['통솔'] * 100
             ef['max_hp'] = min(enemy_troops_per_hero, max_lead_hp)
             ef['hp'] = ef['max_hp']
-            ef['mp']=100
-            ef['max_mp']=100
-            ef['burn']=0
-            ef['stun']=0
-            ef['buff']=0
-            ef['debuff']=0
+            ef['mp'] = 100
+            ef['max_mp'] = 100
+            ef['burn'] = 0
+            ef['stun'] = 0
+            ef['buff'] = 0
+            ef['debuff'] = 0
             enemy_party.append(ef)
 
         won, my_injured, enemy_injured, my_captured, enemy_captured = self.execute_battle(
-            my_party, enemy_party, is_defense=True, my_faction=pl, enemy_faction=enemy
+            my_party, enemy_party, is_defense=True, my_faction=pl, enemy_faction=enemy,
+            from_castle=target_castle, target_castle=attacker_castle
         )
 
-        # 부상 상태 원본 장수에게 적용
+        # 부상 처리
         for injured in my_injured:
-            for h in pl['장수']:
+            for h in target_castle['장수']:
                 if h['이름'] == injured['이름']:
                     h['부상'] = injured['부상']
 
         for injured in enemy_injured:
-            for h in enemy['장수']:
+            for h in attacker_castle['장수']:
                 if h['이름'] == injured['이름']:
                     h['부상'] = injured['부상']
 
         # 포로 처리
         for captured in my_captured:
-            # 아군이 적에게 잡힘
-            for h in pl['장수'][:]:
+            for h in target_castle['장수'][:]:
                 if h['이름'] == captured['이름']:
-                    pl['장수'].remove(h)
+                    target_castle['장수'].remove(h)
                     self.prisoners[attacker_id].append(h)
 
         for captured in enemy_captured:
-            # 적이 아군에게 잡힘
-            for h in enemy['장수'][:]:
+            for h in attacker_castle['장수'][:]:
                 if h['이름'] == captured['이름']:
-                    enemy['장수'].remove(h)
+                    attacker_castle['장수'].remove(h)
                     self.prisoners[self.player_id].append(h)
-                    # ===== 군주 포로 시 영토 전체 획득 =====
                     if h.get('is_lord', False):
                         print(f"\n  {C.YELLOW}👑👑👑 군주 {h['이름']} 포로! 👑👑👑{C.RESET}")
+                        for cname, cdata in self.castles.items():
+                            if cdata['소속'] == attacker_id:
+                                cdata['소속'] = self.player_id
+                                for remaining in cdata['장수'][:]:
+                                    cdata['장수'].remove(remaining)
+                                    self.prisoners[self.player_id].append(remaining)
                         print(f"  {C.RED}🏴 {enemy['이름']}군 전체 영토 흡수!{C.RESET}")
-                        territory_gain = enemy['영토']
-                        pl['영토'] += territory_gain
-                        enemy['영토'] = 0
-                        print(f"  🏰 영토 +{territory_gain}!")
-                        for remaining in enemy['장수'][:]:
-                            enemy['장수'].remove(remaining)
-                            self.prisoners[self.player_id].append(remaining)
-                            print(f"     ⛓️ {remaining['이름']} 포로!")
                         time.sleep(1)
 
         if won:
-            print(f"\n  🏆 방어 성공! 금 +1000")
+            print(f"\n  🏆 {target_castle_name} 방어 성공! 금 +1000")
             pl['금'] += 1000
-            enemy['병력'] = int(enemy['병력'] * 0.7)
-            pl['병력'] = int(pl['병력'] * 0.9)
+            attacker_castle['병력'] = int(attacker_castle['병력'] * 0.7)
+            target_castle['병력'] = int(target_castle['병력'] * 0.9)
         else:
-            print(f"\n  🔥 방어 실패... 영토 상실")
-            pl['영토'] -= 1
-            enemy['영토'] += 1
-            pl['병력'] = int(pl['병력'] * 0.5)
+            print(f"\n  🔥 {target_castle_name} 함락!")
+            target_castle['소속'] = attacker_id
+            target_castle['병력'] = int(target_castle['병력'] * 0.5)
 
     def run_war(self):
+        """전쟁 - 성 기반"""
         pl = self.get_player()
-        if pl['쌀']<2000:
-            print("  ❌ 군량 부족 (필요: 쌀 2000)")
+
+        # 1. 출발 성 선택
+        print(f"\n{'═' * 50}")
+        print("  ⚔️ 전쟁 - 출발 성 선택")
+        print(f"{'═' * 50}")
+
+        my_castles = self.get_faction_castles(self.player_id)
+        # 인접 적성이 있는 성만 표시
+        attack_castles = []
+        for name, castle in my_castles.items():
+            enemy_adj = self.get_adjacent_enemy_castles(name)
+            if enemy_adj and castle['장수']:  # 인접 적성이 있고 장수가 있어야 함
+                attack_castles.append(name)
+
+        if not attack_castles:
+            print("  ❌ 출격 가능한 성이 없습니다. (인접 적성이 없거나 장수가 없음)")
             return
 
-        targets = [f for f in self.factions if f!=self.player_id and self.factions[f]['영토']>0]
-        if not targets:
-            print("  ❌ 침공 가능한 적이 없습니다")
+        print("\n  출격할 성을 선택하세요:")
+        for i, name in enumerate(attack_castles, 1):
+            castle = my_castles[name]
+            enemy_adj = self.get_adjacent_enemy_castles(name)
+            print(f"  {i}. {name} - 병력:{castle['병력']:,} 군량:{castle['군량']:,} 장수:{len(castle['장수'])}명 → 적성: {', '.join(enemy_adj)}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(attack_castles))
+        if choice == 0:
+            return
+        from_castle_name = attack_castles[choice - 1]
+        from_castle = self.castles[from_castle_name]
+
+        # 군량 확인
+        if from_castle['군량'] < 2000:
+            print(f"  ❌ {from_castle_name}의 군량 부족 (필요: 2000, 보유: {from_castle['군량']})")
             return
 
-        print("\n┌─────────── 침공 대상 ───────────┐")
+        # 2. 목표 적성 선택
+        enemy_targets = self.get_adjacent_enemy_castles(from_castle_name)
         my_alliance = self.alliances.get(self.player_id)
-        for fid in targets:
-            f = self.factions[fid]
-            # 동맹 세력 표시
-            if my_alliance and my_alliance['대상'] == fid:
+
+        print(f"\n  공격할 적성을 선택하세요:")
+        valid_targets = []
+        for i, target_name in enumerate(enemy_targets, 1):
+            target = self.castles[target_name]
+            enemy_faction = self.factions[target['소속']]
+            # 동맹 체크
+            if my_alliance and my_alliance['대상'] == target['소속']:
                 ally_mark = " 🤝동맹"
             else:
                 ally_mark = ""
-            print(f"│  {fid}. {f['이름']} (병력: {f['병력']:,}, 영토: {f['영토']}){ally_mark} │")
-        print("└─────────────────────────────────┘")
+                valid_targets.append(target_name)
+            print(f"  {i}. {target_name} ({enemy_faction['이름']}군) - 병력:{target['병력']:,} 장수:{len(target['장수'])}명{ally_mark}")
+        print("  0. 취소")
 
-        e_id = get_valid_input("  선택: ", 1, max(self.factions.keys()))
-        if e_id not in targets:
-            print("  ❌ 잘못된 선택")
+        if not valid_targets:
+            print("  ❌ 공격 가능한 적성이 없습니다. (모두 동맹)")
             return
 
-        # 동맹 세력 공격 불가
-        if my_alliance and my_alliance['대상'] == e_id:
-            print(f"  ❌ {self.factions[e_id]['이름']}군은 동맹 세력입니다!")
-            print("     동맹을 파기한 후에 공격할 수 있습니다.")
+        choice = get_valid_input("  선택: ", 0, len(enemy_targets))
+        if choice == 0:
             return
-
+        target_castle_name = enemy_targets[choice - 1]
+        target_castle = self.castles[target_castle_name]
+        e_id = target_castle['소속']
         enemy = self.factions[e_id]
-        pl['쌀']-=2000
 
-        my_party = []
-        enemy_party = []
+        # 동맹 체크
+        if my_alliance and my_alliance['대상'] == e_id:
+            print(f"  ❌ {enemy['이름']}군은 동맹 세력입니다!")
+            return
 
-        # 출전 인원 선택 (1~5명)
-        available_heroes = [h for h in pl['장수'] if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
+        # 군량 소모
+        from_castle['군량'] -= 2000
+
+        # 3. 출전 장수 선택
+        available_heroes = [h for h in from_castle['장수']
+                          if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
         max_heroes = min(5, len(available_heroes))
+
         if max_heroes == 0:
             print("  ❌ 출전 가능한 장수가 없습니다!")
-            pl['쌀'] += 2000  # 환불
+            from_castle['군량'] += 2000  # 환불
             return
 
-        print(f"\n  📊 출전 가능 병력: {pl['병력']:,}")
+        print(f"\n  📊 {from_castle_name} 병력: {from_castle['병력']:,}")
         print(f"  👥 출전 가능 장수: {max_heroes}명")
         num_heroes = get_valid_input(f"  몇 명 출전? (1~{max_heroes}): ", 1, max_heroes)
 
-        # 병력 분배: n명에게 균등 분배
-        troops_per_hero = pl['병력'] // num_heroes
-        # AI는 최대 5명까지 자유롭게 출전 (플레이어 수에 맞추지 않음)
-        enemy_count = min(5, len(enemy['장수'])) if enemy['장수'] else 0
-        enemy_troops_per_hero = enemy['병력'] // enemy_count if enemy_count > 0 else 0
+        # 병력 분배
+        troops_per_hero = from_castle['병력'] // num_heroes
+        enemy_count = min(5, len(target_castle['장수'])) if target_castle['장수'] else 0
+        enemy_troops_per_hero = target_castle['병력'] // enemy_count if enemy_count > 0 else 0
 
         print(f"\n  📊 장수당 병력: {troops_per_hero:,}")
-        print(f"  👇 출진할 장수 {num_heroes}명을 선택하세요 (부상/행동완료 장수 제외)")
+        print(f"  👇 출진할 장수 {num_heroes}명을 선택하세요:")
 
+        my_party = []
+        selected_heroes = []
         for i in range(num_heroes):
-            h = self.select_hero(f"장수 [{i+1}/{num_heroes}]", allow_injured=False, check_acted=True, mark_acted=True)
-            if h is None:
-                print("  ❌ 출전 가능한 장수가 부족합니다!")
-                return
-            f=h.copy()
-            # HP = min(할당 병력, 통솔 × 100)
-            max_lead_hp = h['통솔'] * 100
+            print(f"\n  장수 [{i+1}/{num_heroes}] 선택:")
+            for j, h in enumerate(available_heroes, 1):
+                if h not in selected_heroes:
+                    print(f"  {j}. {h['이름']} (무력:{h['무력']} 지력:{h['지력']} 통솔:{h['통솔']})")
+            choice = get_valid_input("  선택: ", 1, len(available_heroes))
+            hero = available_heroes[choice - 1]
+            if hero in selected_heroes:
+                print("  ❌ 이미 선택한 장수입니다.")
+                continue
+            selected_heroes.append(hero)
+            self.acted_heroes.append(hero['이름'])
+
+            f = hero.copy()
+            max_lead_hp = hero['통솔'] * 100
             f['max_hp'] = min(troops_per_hero, max_lead_hp)
             f['hp'] = f['max_hp']
-            if troops_per_hero > max_lead_hp:
-                print(f"     ⚠ {h['이름']}의 통솔력 한계로 {max_lead_hp}명만 지휘 가능")
-            f['mp']=100
-            f['max_mp']=100
-            f['burn']=0
-            f['stun']=0
-            f['buff']=0
-            f['debuff']=0
+            f['mp'] = 100
+            f['max_mp'] = 100
+            f['burn'] = 0
+            f['stun'] = 0
+            f['buff'] = 0
+            f['debuff'] = 0
             my_party.append(f)
 
-        # 적 장수가 없으면 전투 없이 즉시 승리
-        if not enemy['장수']:
-            print(f"\n  {C.YELLOW}🏳️ {enemy['이름']}군에 장수가 없습니다! 무혈 점령!{C.RESET}")
+        # 4. 전투 실행
+        enemy_party = []
+        if not target_castle['장수']:
+            print(f"\n  {C.YELLOW}🏳️ {target_castle_name}에 장수가 없습니다! 무혈 점령!{C.RESET}")
             time.sleep(1)
             won = True
             my_injured = []
@@ -4048,84 +4320,73 @@ class Game:
             my_captured = []
             enemy_captured = []
         else:
-            # AI는 최대 5명까지 자유롭게 출전 (위에서 enemy_count 이미 계산됨)
-            for h in random.sample(enemy['장수'], enemy_count):
-                ef=h.copy()
-                # HP = min(할당 병력, 통솔 × 100)
+            for h in random.sample(target_castle['장수'], enemy_count):
+                ef = h.copy()
                 max_lead_hp = h['통솔'] * 100
                 ef['max_hp'] = min(enemy_troops_per_hero, max_lead_hp)
                 ef['hp'] = ef['max_hp']
-                ef['mp']=100
-                ef['max_mp']=100
-                ef['burn']=0
-                ef['stun']=0
-                ef['buff']=0
-                ef['debuff']=0
+                ef['mp'] = 100
+                ef['max_mp'] = 100
+                ef['burn'] = 0
+                ef['stun'] = 0
+                ef['buff'] = 0
+                ef['debuff'] = 0
                 enemy_party.append(ef)
 
             won, my_injured, enemy_injured, my_captured, enemy_captured = self.execute_battle(
-                my_party, enemy_party, my_faction=pl, enemy_faction=enemy
+                my_party, enemy_party, my_faction=pl, enemy_faction=enemy,
+                from_castle=from_castle, target_castle=target_castle
             )
 
-        # 부상 상태 원본 장수에게 적용
+        # 5. 부상 처리
         for injured in my_injured:
-            for h in pl['장수']:
+            for h in from_castle['장수']:
                 if h['이름'] == injured['이름']:
                     h['부상'] = injured['부상']
 
         for injured in enemy_injured:
-            for h in enemy['장수']:
+            for h in target_castle['장수']:
                 if h['이름'] == injured['이름']:
                     h['부상'] = injured['부상']
 
-        # 포로 처리
+        # 6. 포로 처리
         for captured in my_captured:
-            # 아군이 적에게 잡힘
-            for h in pl['장수'][:]:
+            for h in from_castle['장수'][:]:
                 if h['이름'] == captured['이름']:
-                    pl['장수'].remove(h)
+                    from_castle['장수'].remove(h)
                     self.prisoners[e_id].append(h)
 
         for captured in enemy_captured:
-            # 적이 아군에게 잡힘
-            for h in enemy['장수'][:]:
+            for h in target_castle['장수'][:]:
                 if h['이름'] == captured['이름']:
-                    enemy['장수'].remove(h)
+                    target_castle['장수'].remove(h)
                     self.prisoners[self.player_id].append(h)
-                    # ===== 군주 포로 시 영토 전체 획득 =====
                     if h.get('is_lord', False):
                         print(f"\n  {C.YELLOW}👑👑👑 군주 {h['이름']} 포로! 👑👑👑{C.RESET}")
+                        # 모든 적성 점령
+                        for cname, cdata in self.castles.items():
+                            if cdata['소속'] == e_id:
+                                cdata['소속'] = self.player_id
+                                for remaining in cdata['장수'][:]:
+                                    cdata['장수'].remove(remaining)
+                                    self.prisoners[self.player_id].append(remaining)
                         print(f"  {C.RED}🏴 {enemy['이름']}군 전체 영토 흡수!{C.RESET}")
-                        territory_gain = enemy['영토']
-                        pl['영토'] += territory_gain
-                        enemy['영토'] = 0
-                        print(f"  🏰 영토 +{territory_gain}!")
-                        for remaining in enemy['장수'][:]:
-                            enemy['장수'].remove(remaining)
-                            self.prisoners[self.player_id].append(remaining)
-                            print(f"     ⛓️ {remaining['이름']} 포로!")
                         time.sleep(1)
 
+        # 7. 승패 처리
         if won:
-            print("\n  🏆 승리! 영토 점령!")
-            pl['영토'] += 1
-            enemy['영토'] -= 1
+            print(f"\n  🏆 승리! {target_castle_name} 점령!")
+            target_castle['소속'] = self.player_id
             pl['금'] += 2000
-            pl['병력'] = int(pl['병력'] * 0.8)
+            from_castle['병력'] = int(from_castle['병력'] * 0.8)
 
-            # ===== 세력 멸망 시 남은 장수 모두 포로 처리 =====
-            if enemy['영토'] <= 0:
+            # 세력 멸망 체크
+            if self.get_faction_castle_count(e_id) == 0:
                 print(f"\n  {C.YELLOW}🏴🏴🏴 {enemy['이름']}군 멸망! 🏴🏴🏴{C.RESET}")
-                remaining_heroes = enemy['장수'][:]
-                for h in remaining_heroes:
-                    enemy['장수'].remove(h)
-                    self.prisoners[self.player_id].append(h)
-                    print(f"     ⛓️ {h['이름']} 포로!")
-                print(f"  {C.GREEN}총 {len(remaining_heroes)}명의 장수를 사로잡았습니다!{C.RESET}")
                 time.sleep(1)
         else:
             print("\n  ☠️ 패배... 퇴각합니다.")
-            pl['병력'] = int(pl['병력'] * 0.5)
+            from_castle['병력'] = int(from_castle['병력'] * 0.5)
 
     def process_event(self):
         """이벤트 처리"""
@@ -4138,15 +4399,33 @@ class Game:
             print(f"╠{'═' * 56}╣")
             print(f"║  {event['desc']:<52}║")
 
-            result = EventSystem.apply_event(event, pl)
-
-            if result["applied"]:
-                print(f"║  ➤ 결과: {result['detail']:<44}║")
-                # 이탈한 장수는 재야로
-                if "leaving_hero" in result:
-                    self.free_heroes.append(result["leaving_hero"])
+            # 이벤트 대상 결정 (금 관련은 세력, 그 외는 수도 성)
+            effect = event.get("effect", "")
+            if effect == "gold":
+                target = pl  # 금은 세력 단위
             else:
-                print(f"║  ➤ {result['detail']:<48}║")
+                # 수도 성 찾기
+                my_castles = self.get_faction_castles(self.player_id)
+                target = None
+                for cname, cdata in my_castles.items():
+                    if cdata.get('수도'):
+                        target = cdata
+                        break
+                if not target and my_castles:
+                    target = list(my_castles.values())[0]
+
+            if target:
+                result = EventSystem.apply_event(event, target)
+
+                if result["applied"]:
+                    print(f"║  ➤ 결과: {result['detail']:<44}║")
+                    # 이탈한 장수는 재야로
+                    if "leaving_hero" in result:
+                        self.free_heroes.append(result["leaving_hero"])
+                else:
+                    print(f"║  ➤ {result['detail']:<48}║")
+            else:
+                print(f"║  ➤ 이벤트 적용 실패 (성 없음)                      ║")
 
             print(f"╚{'═' * 56}╝")
             time.sleep(1.5)
@@ -4155,57 +4434,73 @@ class Game:
         print("\n┌─────────────── 적군 동향 ───────────────┐")
 
         for fid in self.factions:
-            if fid == self.player_id or self.factions[fid]['영토'] <= 0:
+            if fid == self.player_id or self.get_faction_castle_count(fid) <= 0:
                 continue
 
             fac = self.factions[fid]
-            fac['금'] += fac['상업'] * 5
-            fac['쌀'] += fac['농업'] * 5
+            ai_castles = self.get_faction_castles(fid)
+            ai_heroes = self.get_faction_heroes(fid)
             acted = False
             actions_done = []  # 이번 턴에 한 행동들
+
+            # AI 분기 수입 (성 기반)
+            for cname, cdata in ai_castles.items():
+                fac['금'] += cdata['상업'] * 5
+                cdata['군량'] += cdata['농업'] * 5
 
             # AI 이벤트 (간소화)
             if random.random() < 0.15:
                 event = EventSystem.roll_event()
                 if event and event["effect"] not in ["hero_leave", "hero_join"]:
-                    EventSystem.apply_event(event, fac)
+                    # 성 기반 이벤트 적용
+                    if ai_castles:
+                        target_castle = random.choice(list(ai_castles.values()))
+                        EventSystem.apply_event(event, target_castle)
 
-            # === 등용 시도 (재야 장수) ===
-            if self.free_heroes and fac['금'] >= 150 and len(fac['장수']) < 12:
+            # === 등용 시도 (재야 장수) - 수도에 배치 ===
+            capital_castle = None
+            for cname, cdata in ai_castles.items():
+                if cdata.get('수도'):
+                    capital_castle = (cname, cdata)
+                    break
+            if not capital_castle and ai_castles:
+                capital_castle = list(ai_castles.items())[0]
+
+            if self.free_heroes and fac['금'] >= 150 and len(ai_heroes) < 12 and capital_castle:
                 # 매력 높은 장수가 등용 시도
-                recruiter = max(fac['장수'], key=lambda x: x.get('매력', 50))
-                target_hero = random.choice(self.free_heroes)
-                success_chance = 50 + recruiter.get('매력', 50) // 2
+                if ai_heroes:
+                    recruiter = max(ai_heroes, key=lambda x: x.get('매력', 50))
+                    target_hero = random.choice(self.free_heroes)
+                    success_chance = 50 + recruiter.get('매력', 50) // 2
 
-                if random.randint(0, 100) < success_chance:
-                    fac['금'] -= 150
-                    target_hero['충성'] = 70
-                    target_hero['원소속'] = fid  # 원소속 갱신
-                    fac['장수'].append(target_hero)
-                    self.free_heroes.remove(target_hero)
-                    actions_done.append(f"🎓 {target_hero['이름']} 등용!")
-                    acted = True
+                    if random.randint(0, 100) < success_chance:
+                        fac['금'] -= 150
+                        target_hero['충성'] = 70
+                        target_hero['원소속'] = fid
+                        capital_castle[1]['장수'].append(target_hero)  # 수도에 배치
+                        self.free_heroes.remove(target_hero)
+                        actions_done.append(f"🎓 {target_hero['이름']} 등용!")
+                        acted = True
 
             # === 포로 등용 시도 ===
             my_prisoners = self.prisoners.get(fid, [])
-            if my_prisoners and fac['금'] >= 100 and len(fac['장수']) < 12:
-                recruiter = max(fac['장수'], key=lambda x: x.get('매력', 50))
+            if my_prisoners and fac['금'] >= 100 and len(ai_heroes) < 12 and ai_heroes and capital_castle:
+                recruiter = max(ai_heroes, key=lambda x: x.get('매력', 50))
                 target_prisoner = random.choice(my_prisoners)
-                # 포로 등용은 성공률 높음
                 success_chance = 60 + recruiter.get('매력', 50) // 2
 
                 if random.randint(0, 100) < success_chance:
                     fac['금'] -= 100
                     target_prisoner['충성'] = 60
-                    target_prisoner['원소속'] = fid  # 원소속 갱신
-                    fac['장수'].append(target_prisoner)
+                    target_prisoner['원소속'] = fid
+                    capital_castle[1]['장수'].append(target_prisoner)  # 수도에 배치
                     my_prisoners.remove(target_prisoner)
                     actions_done.append(f"⛓️→🎓 {target_prisoner['이름']} 포로 등용!")
                     acted = True
 
             # === 충성도 낮은 장수 포상 ===
             if fac['금'] >= 300:
-                low_loyalty = [h for h in fac['장수'] if h['충성'] < 60]
+                low_loyalty = [h for h in ai_heroes if h['충성'] < 60]
                 if low_loyalty and random.random() < 0.4:
                     target = random.choice(low_loyalty)
                     fac['금'] -= 300
@@ -4215,64 +4510,137 @@ class Game:
 
             # === 계략 (다른 세력 공작) ===
             if fac['금'] >= 400 and random.random() < 0.2:
-                targets = [i for i in self.factions if i != fid and i != self.player_id and self.factions[i]['영토'] > 0]
+                targets = [i for i in self.factions if i != fid and i != self.player_id and self.get_faction_castle_count(i) > 0]
                 if targets:
                     t_id = random.choice(targets)
                     t_fac = self.factions[t_id]
+                    t_heroes = self.get_faction_heroes(t_id)
+                    t_castles = self.get_faction_castles(t_id)
                     scheme_type = random.choice(['이간책', '파괴공작'])
 
-                    if scheme_type == '이간책' and t_fac['장수']:
+                    if scheme_type == '이간책' and t_heroes:
                         fac['금'] -= 300
-                        for h in t_fac['장수']:
+                        for h in t_heroes:
                             h['충성'] = max(0, h['충성'] - 8)
                         actions_done.append(f"🕵️ {t_fac['이름']}군 이간책")
-                    else:
+                    elif t_castles:
                         fac['금'] -= 400
-                        t_fac['농업'] = max(0, t_fac['농업'] - 10)
-                        t_fac['상업'] = max(0, t_fac['상업'] - 10)
+                        target_castle = random.choice(list(t_castles.values()))
+                        target_castle['농업'] = max(0, target_castle['농업'] - 10)
+                        target_castle['상업'] = max(0, target_castle['상업'] - 10)
                         actions_done.append(f"💣 {t_fac['이름']}군 파괴공작")
                     acted = True
 
-            # === 전쟁 체크 (병력 충분 + 확률) - 6% 확률로 전쟁 ===
-            if fac['병력'] > 12000 and random.random() < 0.06:
-                # 동맹 세력은 공격 대상에서 제외
-                ai_alliance = self.alliances.get(fid)
-                ally_id = ai_alliance['대상'] if ai_alliance else None
-                targets = [i for i in self.factions if self.factions[i]['영토']>0 and i!=fid and i!=ally_id]
-                if targets:
-                    t_id = random.choice(targets)
+            # === 전쟁 체크 (성 기반) - 6% 확률로 전쟁 ===
+            total_troops = self.get_faction_total_troops(fid)
+            if total_troops > 12000 and random.random() < 0.06:
+                # AI 성 중 인접 적성이 있는 성 찾기
+                ai_castles = self.get_faction_castles(fid)
+                attack_options = []
+                for cname, cdata in ai_castles.items():
+                    if cdata['장수'] and cdata['병력'] > 2000:
+                        for adj in cdata['인접']:
+                            adj_castle = self.castles[adj]
+                            if adj_castle['소속'] != fid:
+                                # 동맹 체크
+                                ai_alliance = self.alliances.get(fid)
+                                ally_id = ai_alliance['대상'] if ai_alliance else None
+                                if adj_castle['소속'] != ally_id:
+                                    attack_options.append((cname, adj))
+
+                if attack_options:
+                    attacker_castle, target_castle = random.choice(attack_options)
+                    t_id = self.castles[target_castle]['소속']
+
                     if t_id == self.player_id:
-                        # 먼저 지금까지 행동 출력
+                        # 플레이어 공격 → 방어전
                         if actions_done:
                             for act in actions_done:
                                 print(f"│  {self.pad_kr(fac['이름'],4)}군: {act}")
                         print("└─────────────────────────────────────────┘")
-                        self.defensive_battle(fid)
+                        self.defensive_battle(fid, attacker_castle, target_castle)
                         return
                     else:
-                        t = self.factions[t_id]
-                        if fac['병력'] > t['병력']:
-                            fac['영토']+=1
-                            t['영토']-=1
-                            actions_done.append(f"⚔️ {t['이름']}군 영토 점령!")
+                        # AI vs AI: 단순 처리
+                        atk_castle = self.castles[attacker_castle]
+                        tgt_castle = self.castles[target_castle]
+                        if atk_castle['병력'] > tgt_castle['병력']:
+                            tgt_castle['소속'] = fid
+                            actions_done.append(f"⚔️ {target_castle} 점령!")
                             acted = True
 
-            # === 병력 모집 ===
-            if fac['병력'] < 20000 and fac['금'] >= 500:
-                rec = 1500 + random.randint(0, 1000)
-                fac['병력'] += rec
-                fac['금'] -= 500
-                actions_done.append(f"🛡️ 병력 +{rec:,}")
-                acted = True
+            # === 접경 성 파악 ===
+            border_castles = {}  # {성이름: (성데이터, 인접적성수)}
+            rear_castles = {}    # 후방 성
+            for cname, cdata in ai_castles.items():
+                enemy_adj_count = 0
+                for adj in cdata['인접']:
+                    adj_castle = self.castles[adj]
+                    if adj_castle['소속'] != fid:
+                        # 동맹 체크
+                        ai_alliance = self.alliances.get(fid)
+                        ally_id = ai_alliance['대상'] if ai_alliance else None
+                        if adj_castle['소속'] != ally_id:
+                            enemy_adj_count += 1
+                if enemy_adj_count > 0:
+                    border_castles[cname] = (cdata, enemy_adj_count)
+                else:
+                    rear_castles[cname] = cdata
 
-            # === 내정 (농업/상업 개발) ===
-            if fac['금'] >= 100 and len(actions_done) < 2:
-                if fac['농업'] < fac['상업'] or random.random() < 0.5:
-                    fac['농업'] += random.randint(8, 15)
-                    fac['쌀'] -= 50
+            # === 장수 이동 (후방 → 접경) ===
+            if border_castles and rear_castles:
+                for rear_name, rear_data in rear_castles.items():
+                    if len(rear_data['장수']) > 1:  # 장수가 2명 이상인 후방 성
+                        # 장수가 부족한 접경 성 찾기
+                        for border_name, (border_data, _) in border_castles.items():
+                            if border_name in rear_data['인접'] and len(border_data['장수']) < 3:
+                                # 장수 1명 이동
+                                hero_to_move = rear_data['장수'][-1]
+                                rear_data['장수'].remove(hero_to_move)
+                                border_data['장수'].append(hero_to_move)
+                                actions_done.append(f"🚶 {hero_to_move['이름']} → {border_name}")
+                                break
+
+            # === 병력 이동 (후방 → 접경) ===
+            if border_castles and rear_castles:
+                for rear_name, rear_data in rear_castles.items():
+                    if rear_data['병력'] > 3000:  # 후방에 병력이 많으면
+                        for border_name, (border_data, _) in border_castles.items():
+                            if border_name in rear_data['인접'] and border_data['병력'] < 5000:
+                                # 병력 이동 (최대 2000)
+                                move_troops = min(2000, rear_data['병력'] - 1000)
+                                if move_troops > 0:
+                                    rear_data['병력'] -= move_troops
+                                    border_data['병력'] += move_troops
+                                    actions_done.append(f"🚚 병력 {move_troops:,} → {border_name}")
+                                    break
+
+            # === 병력 모집 (적극적, 여러 성에서) ===
+            total_troops = self.get_faction_total_troops(fid)
+            recruit_count = 0
+            for cname, cdata in ai_castles.items():
+                if recruit_count >= 2:  # 턴당 최대 2회 징병
+                    break
+                if total_troops < 30000 and fac['금'] >= 400 and cdata['군량'] >= 800:
+                    rec = 1200 + random.randint(0, 800)
+                    cdata['병력'] += rec
+                    cdata['군량'] -= 400
+                    fac['금'] -= 400
+                    total_troops += rec
+                    recruit_count += 1
+                    if recruit_count == 1:
+                        actions_done.append(f"🛡️ 징병 +{rec:,}")
+                    acted = True
+
+            # === 내정 (농업/상업 개발, 성 기반) ===
+            if fac['금'] >= 100 and len(actions_done) < 3 and ai_castles:
+                # 개발도가 낮은 성 우선
+                target_castle = min(ai_castles.values(), key=lambda c: c['농업'] + c['상업'])
+                if target_castle['농업'] < target_castle['상업'] or random.random() < 0.5:
+                    target_castle['농업'] += random.randint(8, 15)
                     actions_done.append("🌾 농업 개발")
                 else:
-                    fac['상업'] += random.randint(8, 15)
+                    target_castle['상업'] += random.randint(8, 15)
                     fac['금'] -= 100
                     actions_done.append("💰 상업 개발")
                 acted = True
@@ -4290,51 +4658,94 @@ class Game:
         pl = self.get_player()
 
         if cmd == 1:
-            if pl['쌀'] < 100:
-                print("  ❌ 쌀이 부족합니다 (필요: 100)")
+            # 농업 - 성 선택
+            castle_name = self.select_my_castle("농업 개발할 성을 선택하세요")
+            if not castle_name:
                 return
-            h = self.select_hero("농업 개발 담당")
-            if h is None:
+            castle = self.castles[castle_name]
+            if castle['군량'] < 100:
+                print(f"  ❌ {castle_name}의 군량이 부족합니다 (필요: 100)")
                 return
-            inc = h['지력']//2 + 10
-            pl['농업']+=inc
-            pl['쌀']-=100
-            print(f"  ✅ {h['이름']}의 노력으로 농업 +{inc}")
+            # 해당 성의 장수 선택
+            available = [h for h in castle['장수'] if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
+            if not available:
+                print(f"  ❌ {castle_name}에 행동 가능한 장수가 없습니다")
+                return
+            print(f"\n  농업 담당 장수 선택:")
+            for i, h in enumerate(available, 1):
+                print(f"  {i}. {h['이름']} (지력:{h['지력']})")
+            choice = get_valid_input("  선택: ", 1, len(available))
+            hero = available[choice - 1]
+            self.acted_heroes.append(hero['이름'])
+
+            inc = hero['지력']//2 + 10
+            castle['농업'] += inc
+            castle['군량'] -= 100
+            print(f"  ✅ {hero['이름']}의 노력으로 {castle_name} 농업 +{inc}")
             time.sleep(1)
         elif cmd == 2:
+            # 상업 - 성 선택
+            castle_name = self.select_my_castle("상업 개발할 성을 선택하세요")
+            if not castle_name:
+                return
+            castle = self.castles[castle_name]
             if pl['금'] < 100:
                 print("  ❌ 금이 부족합니다 (필요: 100)")
                 return
-            h = self.select_hero("상업 개발 담당")
-            if h is None:
+            available = [h for h in castle['장수'] if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
+            if not available:
+                print(f"  ❌ {castle_name}에 행동 가능한 장수가 없습니다")
                 return
-            inc = h['지력']//2 + 10
-            pl['상업']+=inc
-            pl['금']-=100
-            print(f"  ✅ {h['이름']}의 노력으로 상업 +{inc}")
+            print(f"\n  상업 담당 장수 선택:")
+            for i, h in enumerate(available, 1):
+                print(f"  {i}. {h['이름']} (지력:{h['지력']})")
+            choice = get_valid_input("  선택: ", 1, len(available))
+            hero = available[choice - 1]
+            self.acted_heroes.append(hero['이름'])
+
+            inc = hero['지력']//2 + 10
+            castle['상업'] += inc
+            pl['금'] -= 100
+            print(f"  ✅ {hero['이름']}의 노력으로 {castle_name} 상업 +{inc}")
             time.sleep(1)
         elif cmd == 3:
+            # 포상 - 성 선택 후 장수 선택
+            castle_name = self.select_my_castle("포상할 장수가 있는 성을 선택하세요")
+            if not castle_name:
+                return
+            castle = self.castles[castle_name]
             if pl['금'] < 500:
                 print("  ❌ 금이 부족합니다 (필요: 500)")
                 return
-            h = self.select_hero("포상 대상")
-            if h is None:
+            if not castle['장수']:
+                print(f"  ❌ {castle_name}에 장수가 없습니다")
                 return
-            pl['금']-=500
-            h['충성']=min(100,h['충성']+15)
-            print(f"  💰 {h['이름']}의 충성도 +15 (현재: {h['충성']})")
+            print(f"\n  포상 대상 장수 선택:")
+            for i, h in enumerate(castle['장수'], 1):
+                print(f"  {i}. {h['이름']} (충성:{h['충성']})")
+            choice = get_valid_input("  선택: ", 1, len(castle['장수']))
+            hero = castle['장수'][choice - 1]
+
+            pl['금'] -= 500
+            hero['충성'] = min(100, hero['충성'] + 15)
+            print(f"  💰 {hero['이름']}의 충성도 +15 (현재: {hero['충성']})")
             time.sleep(1)
         elif cmd == 4:
+            # 징병 - 성 선택
+            castle_name = self.select_my_castle("징병할 성을 선택하세요")
+            if not castle_name:
+                return
+            castle = self.castles[castle_name]
             if pl['금'] < 800:
                 print("  ❌ 금이 부족합니다 (필요: 800)")
                 return
-            rec = 1500 + (pl['농업']*5)
-            pl['금']-=800
-            pl['병력']+=rec
-            print(f"  🛡️ {rec:,}명 징병 완료! (현재: {pl['병력']:,}명)")
+            rec = 1500 + (castle['농업'] * 5)
+            pl['금'] -= 800
+            castle['병력'] += rec
+            print(f"  🛡️ {castle_name}에서 {rec:,}명 징병! (현재: {castle['병력']:,}명)")
             time.sleep(1)
         elif cmd == 6:
-            targets = [f for f in self.factions if f!=self.player_id and self.factions[f]['영토']>0]
+            targets = [f for f in self.factions if f!=self.player_id and self.get_faction_castle_count(f)>0]
             if not targets:
                 print("  ❌ 대상 없음")
                 return
@@ -4350,7 +4761,9 @@ class Game:
             print("\n┌─────────── 대상 진영 ───────────┐")
             for fid in targets:
                 f = self.factions[fid]
-                print(f"│  {fid}. {f['이름']}군 (영토:{f['영토']}, 병력:{f['병력']:,})  │")
+                castle_cnt = self.get_faction_castle_count(fid)
+                troop_cnt = self.get_faction_total_troops(fid)
+                print(f"│  {fid}. {f['이름']}군 (성:{castle_cnt}, 병력:{troop_cnt:,})  │")
             print("└─────────────────────────────────┘")
             t_id = get_valid_input("  진영 선택: ", 1, max(self.factions.keys()))
 
@@ -4372,14 +4785,15 @@ class Game:
                 time.sleep(1)
                 if random.randint(0, 100) < success_chance:
                     loyalty_drop = 10 + (h['지력'] // 10)
-                    for th in target['장수']:
+                    target_heroes = self.get_faction_heroes(t_id)
+                    for th in target_heroes:
                         th['충성'] = max(0, th['충성'] - loyalty_drop)
                     print(f"  ✅ 성공! {target['이름']}군 장수들의 충성도가 {loyalty_drop} 하락했습니다!")
                 else:
                     print(f"  ❌ 실패... 계략이 발각되었습니다.")
 
             elif sub_cmd == 2:
-                # 파괴공작 - 농업/상업 하락
+                # 파괴공작 - 농업/상업 하락 (성 기반)
                 if pl['금'] < 500:
                     print("  ❌ 금이 부족합니다 (필요: 500)")
                     return
@@ -4390,13 +4804,17 @@ class Game:
                 if random.randint(0, 100) < success_chance:
                     agri_drop = 15 + random.randint(5, 15)
                     comm_drop = 15 + random.randint(5, 15)
-                    target['농업'] = max(10, target['농업'] - agri_drop)
-                    target['상업'] = max(10, target['상업'] - comm_drop)
+                    # 무작위 성에 피해
+                    target_castles = self.get_faction_castles(t_id)
+                    if target_castles:
+                        damaged_castle = random.choice(list(target_castles.values()))
+                        damaged_castle['농업'] = max(10, damaged_castle['농업'] - agri_drop)
+                        damaged_castle['상업'] = max(10, damaged_castle['상업'] - comm_drop)
                     print(f"  ✅ 성공! {target['이름']}군의 농업 -{agri_drop}, 상업 -{comm_drop}!")
                 else:
                     print(f"  ❌ 실패... 첩자가 잡혔습니다.")
         elif cmd == 8:
-            targets = [f for f in self.factions if f!=self.player_id and self.factions[f]['영토']>0]
+            targets = [f for f in self.factions if f!=self.player_id and self.get_faction_castle_count(f)>0]
             my_prisoners = self.prisoners.get(self.player_id, [])
 
             # 등용 대상 선택 (포로 / 재야 / 적 세력)
@@ -4405,7 +4823,8 @@ class Game:
             print(f"│  0. 재야 장수 ({len(self.free_heroes)}명)            │")
             for fid in targets:
                 f = self.factions[fid]
-                print(f"│  {fid}. {f['이름']}군 (장수: {len(f['장수'])}명)      │")
+                hero_cnt = len(self.get_faction_heroes(fid))
+                print(f"│  {fid}. {f['이름']}군 (장수: {hero_cnt}명)      │")
             print("└─────────────────────────────────┘")
             t_id = get_valid_input("  대상 선택 (9=포로, 0=재야): ", 0, 9)
 
@@ -4448,7 +4867,16 @@ class Game:
                     print(f"  🎉 {t_h['이름']} 등용 성공! 아군이 되었습니다!")
                     t_h['충성'] = 60  # 포로 출신은 충성도 60으로 시작
                     t_h['부상'] = 0   # 부상 해제
-                    pl['장수'].append(t_h)
+                    # 수도에 배치
+                    my_castles = self.get_faction_castles(self.player_id)
+                    capital = None
+                    for cname, cdata in my_castles.items():
+                        if cdata.get('수도'):
+                            capital = cdata
+                            break
+                    if not capital:
+                        capital = list(my_castles.values())[0]
+                    capital['장수'].append(t_h)
                     my_prisoners.remove(t_h)
                     time.sleep(1.5)
                 else:
@@ -4496,7 +4924,16 @@ class Game:
                 if random.randint(0, 100) < success_chance:
                     print(f"  🎉 {t_h['이름']} 등용 성공! 아군이 되었습니다!")
                     t_h['충성'] = 75  # 재야 출신은 충성도 75로 시작
-                    pl['장수'].append(t_h)
+                    # 수도에 배치
+                    my_castles = self.get_faction_castles(self.player_id)
+                    capital = None
+                    for cname, cdata in my_castles.items():
+                        if cdata.get('수도'):
+                            capital = cdata
+                            break
+                    if not capital:
+                        capital = list(my_castles.values())[0]
+                    capital['장수'].append(t_h)
                     self.free_heroes.remove(t_h)
                     time.sleep(1.5)
                 else:
@@ -4505,7 +4942,8 @@ class Game:
 
             elif t_id in targets:
                 t_fac = self.factions[t_id]
-                if not t_fac['장수']:
+                t_heroes = self.get_faction_heroes(t_id)
+                if not t_heroes:
                     print("  ❌ 상대 장수 없음")
                     return
 
@@ -4516,7 +4954,7 @@ class Game:
 
                 headers = ["#", "이름", "무력", "지력", "통솔", "매력", "충성"]
                 rows = []
-                for i, th in enumerate(t_fac['장수']):
+                for i, th in enumerate(t_heroes):
                     rows.append([
                         str(i+1), th['이름'],
                         str(th['무력']), str(th['지력']), str(th['통솔']),
@@ -4524,8 +4962,8 @@ class Game:
                     ])
                 print(TUI.table(headers, rows, [3, 8, 5, 5, 5, 5, 5]))
 
-                t_idx = get_valid_input("  등용할 장수 선택: ", 1, len(t_fac['장수']))
-                t_h = t_fac['장수'][t_idx - 1]
+                t_idx = get_valid_input("  등용할 장수 선택: ", 1, len(t_heroes))
+                t_h = t_heroes[t_idx - 1]
 
                 # 사절 선택
                 h = self.select_hero("외교 사절")
@@ -4539,8 +4977,21 @@ class Game:
                 if random.randint(0, 100) < success_chance:
                     print(f"  🎉 {t_h['이름']} 등용 성공! 아군이 되었습니다!")
                     t_h['충성'] = 70  # 새로 등용된 장수는 충성도 70으로 시작
-                    pl['장수'].append(t_h)
-                    t_fac['장수'].remove(t_h)
+                    # 플레이어 수도에 배치
+                    my_castles = self.get_faction_castles(self.player_id)
+                    capital = None
+                    for cname, cdata in my_castles.items():
+                        if cdata.get('수도'):
+                            capital = cdata
+                            break
+                    if not capital:
+                        capital = list(my_castles.values())[0]
+                    capital['장수'].append(t_h)
+                    # 적 성에서 제거
+                    for cname, cdata in self.castles.items():
+                        if cdata['소속'] == t_id and t_h in cdata['장수']:
+                            cdata['장수'].remove(t_h)
+                            break
                     time.sleep(1.5)
                 else:
                     print(f"  💬 등용 실패... {t_h['이름']}이(가) 거절했습니다.")
@@ -4549,13 +5000,25 @@ class Game:
                 print("  ❌ 잘못된 선택")
 
     def show_info(self):
-        """정보 화면"""
+        """정보 화면 (성 기반)"""
+        # 세력별 통계 생성
+        rows = []
+        for fid, fac in self.factions.items():
+            castle_count = self.get_faction_castle_count(fid)
+            total_troops = self.get_faction_total_troops(fid)
+            hero_count = len(self.get_faction_heroes(fid))
+            # 농업/상업 합계 계산
+            total_agri = 0
+            total_comm = 0
+            for cname, cdata in self.castles.items():
+                if cdata['소속'] == fid:
+                    total_agri += cdata['농업']
+                    total_comm += cdata['상업']
+            rows.append([fac['이름'], str(castle_count), f"{total_troops:,}", str(hero_count), str(total_agri), str(total_comm)])
+
         print("\n" + TUI.table(
-            ["세력", "영토", "병력", "장수", "농업", "상업"],
-            [
-                [f['이름'], str(f['영토']), f"{f['병력']:,}", str(len(f['장수'])), str(f['농업']), str(f['상업'])]
-                for f in self.factions.values()
-            ],
+            ["세력", "성", "병력", "장수", "농업", "상업"],
+            rows,
             [8, 6, 10, 6, 6, 6]
         ))
 
@@ -4573,6 +5036,238 @@ class Game:
                 print(f"     - {h['이름']} (무력:{h['무력']} 지력:{h['지력']} 원소속:{self.factions.get(h.get('원소속', 0), {}).get('이름', '재야')})")
 
         input("\n  엔터를 누르면 계속...")
+
+    # === 이동 시스템 ===
+    def run_move(self):
+        """이동 명령 (장수/병력/군량)"""
+        print(f"\n{'═' * 50}")
+        print("  🚚 이동")
+        print(f"{'═' * 50}")
+        print("  1. 장수 이동")
+        print("  2. 병력 이동")
+        print("  3. 군량 이동")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, 3)
+        if choice == 0:
+            return
+        elif choice == 1:
+            self.move_hero()
+        elif choice == 2:
+            self.move_troops()
+        elif choice == 3:
+            self.move_supply()
+
+    def select_my_castle(self, msg="성을 선택하세요"):
+        """내 성 선택"""
+        my_castles = self.get_faction_castles(self.player_id)
+        castle_list = list(my_castles.keys())
+
+        print(f"\n  {msg}")
+        for i, name in enumerate(castle_list, 1):
+            castle = my_castles[name]
+            hero_names = ", ".join([h['이름'] for h in castle['장수']]) if castle['장수'] else "(없음)"
+            print(f"  {i}. {name} - 병력:{castle['병력']:,} 군량:{castle['군량']:,} 장수:{hero_names}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(castle_list))
+        if choice == 0:
+            return None
+        return castle_list[choice - 1]
+
+    def move_hero(self):
+        """장수 이동 (여러 명 동시 이동 가능)"""
+        # 1. 출발 성 선택
+        from_castle = self.select_my_castle("출발 성을 선택하세요")
+        if not from_castle:
+            return
+
+        castle = self.castles[from_castle]
+        # 이동 가능한 장수 (부상X, 행동완료X)
+        available = [h for h in castle['장수']
+                     if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
+
+        if not available:
+            print("  ❌ 이동 가능한 장수가 없습니다.")
+            return
+
+        # 2. 목적지 먼저 선택 (인접 아군 성)
+        friendly = self.get_adjacent_friendly_castles(from_castle)
+        if not friendly:
+            print("  ❌ 인접한 아군 성이 없습니다.")
+            return
+
+        print(f"\n  목적지를 선택하세요:")
+        for i, name in enumerate(friendly, 1):
+            c = self.castles[name]
+            hero_names = ', '.join([h['이름'] for h in c['장수']]) if c['장수'] else '없음'
+            print(f"  {i}. {name} - 병력:{c['병력']:,} 장수:{hero_names}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(friendly))
+        if choice == 0:
+            return
+        to_castle = friendly[choice - 1]
+
+        # 3. 장수 선택 (여러 명 가능)
+        print(f"\n  이동할 장수를 선택하세요 (예: 1,2,3 또는 all):")
+        for i, h in enumerate(available, 1):
+            print(f"  {i}. {h['이름']} (무력:{h['무력']} 지력:{h['지력']})")
+        print("  0. 취소")
+
+        selection = input("  선택: ").strip().lower()
+        if selection == '0' or selection == '':
+            return
+
+        # 선택 파싱
+        selected_heroes = []
+        if selection == 'all':
+            selected_heroes = available[:]
+        else:
+            try:
+                indices = [int(x.strip()) for x in selection.split(',')]
+                for idx in indices:
+                    if 1 <= idx <= len(available):
+                        if available[idx - 1] not in selected_heroes:
+                            selected_heroes.append(available[idx - 1])
+            except ValueError:
+                print("  ❌ 잘못된 입력입니다.")
+                return
+
+        if not selected_heroes:
+            print("  ❌ 선택된 장수가 없습니다.")
+            return
+
+        # 4. 이동 실행
+        moved_names = []
+        for hero in selected_heroes:
+            castle['장수'].remove(hero)
+            self.castles[to_castle]['장수'].append(hero)
+            self.acted_heroes.append(hero['이름'])
+            moved_names.append(hero['이름'])
+
+        print(f"\n  ✅ {', '.join(moved_names)}이(가) {from_castle}에서 {to_castle}(으)로 이동했습니다.")
+        self.advance_day()
+
+    def move_troops(self):
+        """병력 이동"""
+        # 1. 출발 성 선택
+        from_castle = self.select_my_castle("출발 성을 선택하세요")
+        if not from_castle:
+            return
+
+        castle = self.castles[from_castle]
+        if castle['병력'] <= 0:
+            print("  ❌ 이동할 병력이 없습니다.")
+            return
+
+        # 이동 가능한 장수 확인 (호송 필요)
+        available = [h for h in castle['장수']
+                     if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
+        if not available:
+            print("  ❌ 병력을 호송할 장수가 없습니다.")
+            return
+
+        # 2. 호송 장수 선택
+        print(f"\n  호송할 장수를 선택하세요:")
+        for i, h in enumerate(available, 1):
+            print(f"  {i}. {h['이름']}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(available))
+        if choice == 0:
+            return
+        escort = available[choice - 1]
+
+        # 3. 목적지 선택
+        friendly = self.get_adjacent_friendly_castles(from_castle)
+        if not friendly:
+            print("  ❌ 인접한 아군 성이 없습니다.")
+            return
+
+        print(f"\n  목적지를 선택하세요:")
+        for i, name in enumerate(friendly, 1):
+            c = self.castles[name]
+            print(f"  {i}. {name} - 현재 병력:{c['병력']:,}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(friendly))
+        if choice == 0:
+            return
+        to_castle = friendly[choice - 1]
+
+        # 4. 이동량 선택
+        max_troops = castle['병력']
+        print(f"\n  이동할 병력 수 (최대 {max_troops:,}):")
+        amount = get_valid_input("  병력: ", 1, max_troops)
+
+        # 5. 이동 실행
+        castle['병력'] -= amount
+        self.castles[to_castle]['병력'] += amount
+        self.acted_heroes.append(escort['이름'])
+
+        print(f"\n  ✅ {escort['이름']}이(가) 병력 {amount:,}을(를) {to_castle}(으)로 호송했습니다.")
+        self.advance_day()
+
+    def move_supply(self):
+        """군량 이동"""
+        # 1. 출발 성 선택
+        from_castle = self.select_my_castle("출발 성을 선택하세요")
+        if not from_castle:
+            return
+
+        castle = self.castles[from_castle]
+        if castle['군량'] <= 0:
+            print("  ❌ 이동할 군량이 없습니다.")
+            return
+
+        # 호송 장수 확인
+        available = [h for h in castle['장수']
+                     if h.get('부상', 0) == 0 and h['이름'] not in self.acted_heroes]
+        if not available:
+            print("  ❌ 군량을 호송할 장수가 없습니다.")
+            return
+
+        # 2. 호송 장수 선택
+        print(f"\n  호송할 장수를 선택하세요:")
+        for i, h in enumerate(available, 1):
+            print(f"  {i}. {h['이름']}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(available))
+        if choice == 0:
+            return
+        escort = available[choice - 1]
+
+        # 3. 목적지 선택
+        friendly = self.get_adjacent_friendly_castles(from_castle)
+        if not friendly:
+            print("  ❌ 인접한 아군 성이 없습니다.")
+            return
+
+        print(f"\n  목적지를 선택하세요:")
+        for i, name in enumerate(friendly, 1):
+            c = self.castles[name]
+            print(f"  {i}. {name} - 현재 군량:{c['군량']:,}")
+        print("  0. 취소")
+
+        choice = get_valid_input("  선택: ", 0, len(friendly))
+        if choice == 0:
+            return
+        to_castle = friendly[choice - 1]
+
+        # 4. 이동량 선택
+        max_supply = castle['군량']
+        print(f"\n  이동할 군량 (최대 {max_supply:,}):")
+        amount = get_valid_input("  군량: ", 1, max_supply)
+
+        # 5. 이동 실행
+        castle['군량'] -= amount
+        self.castles[to_castle]['군량'] += amount
+        self.acted_heroes.append(escort['이름'])
+
+        print(f"\n  ✅ {escort['이름']}이(가) 군량 {amount:,}을(를) {to_castle}(으)로 호송했습니다.")
+        self.advance_day()
 
     def run_diplomacy(self):
         """외교 명령 (동맹 체결/파기)"""
@@ -4607,7 +5302,7 @@ class Game:
                 return
 
             # 동맹 가능한 세력 목록
-            available = [f for f in self.factions if f != self.player_id and self.factions[f]['영토'] > 0]
+            available = [f for f in self.factions if f != self.player_id and self.get_faction_castle_count(f) > 0]
             if not available:
                 print("  ❌ 동맹 가능한 세력이 없습니다.")
                 return
@@ -4615,13 +5310,15 @@ class Game:
             print("\n┌─────────── 동맹 대상 선택 ───────────┐")
             for fid in available:
                 f = self.factions[fid]
+                castle_cnt = self.get_faction_castle_count(fid)
+                troop_cnt = self.get_faction_total_troops(fid)
                 # 상대가 이미 다른 세력과 동맹 중인지 확인
                 their_alliance = self.alliances.get(fid)
                 if their_alliance:
                     status = f"(동맹중: {self.factions[their_alliance['대상']]['이름']}군)"
                 else:
                     status = ""
-                print(f"│  {fid}. {f['이름']}군 (영토:{f['영토']}, 병력:{f['병력']:,}) {status}  │")
+                print(f"│  {fid}. {f['이름']}군 (성:{castle_cnt}, 병력:{troop_cnt:,}) {status}  │")
             print("└─────────────────────────────────────┘")
 
             t_id = get_valid_input("  대상 선택 (0=취소): ", 0, max(self.factions.keys()))
@@ -4679,7 +5376,8 @@ class Game:
             print(f"\n  💔 {ally_name}군과의 동맹을 파기했습니다!")
             print(f"  📉 휘하 장수들의 충성도가 {loyalty_drop} 하락합니다...")
 
-            for h in pl['장수']:
+            my_heroes = self.get_faction_heroes(self.player_id)
+            for h in my_heroes:
                 if not h.get('is_lord', False):  # 군주 제외
                     h['충성'] = max(0, h['충성'] - loyalty_drop)
 
@@ -4711,10 +5409,10 @@ class Game:
 
     def process_monthly(self):
         """월별 처리: 부상 회복, 포로 탈출 체크"""
-        pl = self.get_player()
 
-        # 부상 회복
-        for h in pl['장수']:
+        # 부상 회복 (플레이어 장수)
+        my_heroes = self.get_faction_heroes(self.player_id)
+        for h in my_heroes:
             if h.get('부상', 0) > 0:
                 h['부상'] -= 1
                 if h['부상'] == 0:
@@ -4732,8 +5430,17 @@ class Game:
 
                     # 원래 세력이 존재하면 그 세력으로 복귀
                     original_faction = prisoner.get('원소속', 0)
-                    if original_faction > 0 and original_faction in self.factions and self.factions[original_faction]['영토'] > 0:
-                        self.factions[original_faction]['장수'].append(prisoner)
+                    if original_faction > 0 and original_faction in self.factions and self.get_faction_castle_count(original_faction) > 0:
+                        # 원래 세력의 수도에 배치
+                        orig_castles = self.get_faction_castles(original_faction)
+                        orig_capital = None
+                        for cname, cdata in orig_castles.items():
+                            if cdata.get('수도'):
+                                orig_capital = cdata
+                                break
+                        if not orig_capital:
+                            orig_capital = list(orig_castles.values())[0]
+                        orig_capital['장수'].append(prisoner)
                         if fid == self.player_id:
                             print(f"  🏃 포로 {prisoner['이름']}이(가) 탈출하여 {self.factions[original_faction]['이름']}군으로 돌아갔습니다!")
                     else:
@@ -4759,13 +5466,20 @@ class Game:
                     print(f"  📜 {ally_name}군과의 동맹이 만료되었습니다.")
                 del self.alliances[fid]
 
-        # 분기 수입 (3, 6, 9, 12월)
+        # 분기 수입 (3, 6, 9, 12월) - 성별로 계산
         if self.month in [3, 6, 9, 12]:
-            g = pl['상업'] * 20 * pl['영토']
-            r = pl['농업'] * 30 * pl['영토']
-            pl['금'] += g
-            pl['쌀'] += r
-            print(f"\n  📦 [{self.month}월 분기 수입] 금 +{g:,} / 쌀 +{r:,}")
+            pl = self.get_player()
+            total_gold = 0
+            total_rice = 0
+            my_castles = self.get_faction_castles(self.player_id)
+            for castle_name, castle in my_castles.items():
+                g = castle['상업'] * 20
+                r = castle['농업'] * 30
+                total_gold += g
+                castle['군량'] += r
+                total_rice += r
+            pl['금'] += total_gold
+            print(f"\n  📦 [{self.month}월 분기 수입] 금 +{total_gold:,} / 군량 +{total_rice:,}")
 
     def show_victory_ending(self):
         """천하통일 엔딩"""
@@ -4794,12 +5508,13 @@ class Game:
 
         print(f"\n{C.BOLD}═══════════ 통일 기록 ═══════════{C.RESET}")
         print(f"  📅 통일 달성: {self.year}년 {self.month}월 (총 {total_months}개월)")
-        print(f"  🏰 최종 영토: {pl['영토']}개")
-        print(f"  ⚔️ 병력: {pl['병력']:,}명")
-        print(f"  💰 금: {pl['금']:,} / 쌀: {pl['쌀']:,}")
+        print(f"  🏰 최종 영토: {self.get_faction_castle_count(self.player_id)}개 성")
+        print(f"  ⚔️ 병력: {self.get_faction_total_troops(self.player_id):,}명")
+        print(f"  💰 금: {pl['금']:,} / 군량: {self.get_faction_total_supply(self.player_id):,}")
 
         print(f"\n{C.BOLD}═══════════ 휘하 장수 ═══════════{C.RESET}")
-        for i, h in enumerate(pl['장수']):
+        my_heroes = self.get_faction_heroes(self.player_id)
+        for i, h in enumerate(my_heroes):
             rank = "👑" if i == 0 else "⭐" if i < 3 else "🎖️"
             print(f"  {rank} {h['이름']} (무력:{h['무력']} 지력:{h['지력']} 통솔:{h['통솔']})")
 
@@ -4869,15 +5584,16 @@ class Game:
         while True:
             pl = self.get_player()
 
-            # ===== 패배 조건: 영토 0 =====
-            if pl['영토'] <= 0:
+            # ===== 패배 조건: 성 0개 =====
+            my_castle_count = self.get_faction_castle_count(self.player_id)
+            if my_castle_count <= 0:
                 print("\n" + "=" * 50)
                 print("  🏳️ 멸망... 천하통일의 꿈은 여기서 끝났습니다.")
                 print("=" * 50)
                 break
 
-            # ===== 승리 조건: 천하통일 =====
-            enemies_alive = [f for f in self.factions if f != self.player_id and self.factions[f]['영토'] > 0]
+            # ===== 승리 조건: 천하통일 (모든 성 점령) =====
+            enemies_alive = [f for f in self.factions if f != self.player_id and self.get_faction_castle_count(f) > 0]
             if not enemies_alive:
                 self.show_victory_ending()
                 break
@@ -4890,7 +5606,8 @@ class Game:
                     for ai_turn in range(3):
                         self.process_ai_turn()
 
-            if pl['영토'] <= 0:
+            my_castle_count = self.get_faction_castle_count(self.player_id)
+            if my_castle_count <= 0:
                 print("\n  🏳️ 적의 침공으로 멸망했습니다...")
                 break
 
@@ -4900,7 +5617,7 @@ class Game:
             self.show_status()
             self.show_commands()
 
-            c = get_valid_input("  명령 선택: ", 0, 11)
+            c = get_valid_input("  명령 선택: ", 0, 12)
 
             if c == 0:
                 print("\n  게임을 종료합니다.")
@@ -4915,12 +5632,15 @@ class Game:
                 self.run_diplomacy()
                 # 외교는 행동 소모 안함 (체결/파기만 소모)
             elif c == 10:
+                # 이동 (장수/병력/군량)
+                self.run_move()
+            elif c == 11:
                 # 저장
                 self.show_save_slots()
                 slot = get_valid_input("  저장할 슬롯 (1~3, 0=취소): ", 0, 3)
                 if slot > 0:
                     self.save_game(slot)
-            elif c == 11:
+            elif c == 12:
                 # 로드
                 self.show_save_slots(show_auto=True)
                 slot = get_valid_input("  로드할 슬롯 (0~3, -1=취소): ", -1, 3)
